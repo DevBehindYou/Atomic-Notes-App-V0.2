@@ -66,7 +66,7 @@ void main() {
 
   group('AppNotification.fromMap', () {
     test('parses a full row and detects a valid CTA', () {
-      final n = AppNotification.fromMap({
+      final n = AppNotification.fromMap(const {
         'id': 'notif_1',
         'type': 'server_down',
         'subject': 'Sync down',
@@ -86,7 +86,7 @@ void main() {
       expect(n.expiresAt, isNull);
     });
     test('a missing/empty CTA is not treated as actionable', () {
-      final n = AppNotification.fromMap({
+      final n = AppNotification.fromMap(const {
         'id': 'notif_2',
         'type': 'general',
         'subject': 'Hello',
