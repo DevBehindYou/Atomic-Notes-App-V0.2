@@ -133,6 +133,15 @@ class Note {
     return false;
   }
 
+  /// Marks the note as waiting to be sent again, even though its content is what
+  /// the cloud already holds. Used when the cloud copy is in the wrong form (plain
+  /// text while the vault is unlocked), so the next sync must rewrite it sealed.
+  /// [settleDirty] leaves such a note alone because [syncedSig] is empty.
+  void requireResend() {
+    dirty = true;
+    syncedSig = '';
+  }
+
   // ---- Hive (local) ----------------------------------------------------
   Map<String, dynamic> toMap() => {
         'id': id,
@@ -258,4 +267,18 @@ extension NoteFilterLabel on NoteFilter {
         NoteFilter.todos => 'To-dos',
         NoteFilter.notes => 'Notes',
       };
+}
+
+/// True when a row pulled from the cloud holds its content as plain text while
+/// this device has the vault unlocked. Such a row is a note that was written before
+/// encryption was on (or by a device that had it locked): it has to be sent again
+/// sealed, or it stays readable by the Server for good.
+///
+/// Decided per row, at the moment the row is merged, so it does not matter which
+/// rows the unlock happened to find: a row that arrives a moment later is treated
+/// the same way.
+bool rowNeedsSealing(Map<dynamic, dynamic> row, {required bool vaultUnlocked}) {
+  if (!vaultUnlocked) return false;
+  final encV = row['enc_v'];
+  return !(encV is int && encV >= 1);
 }

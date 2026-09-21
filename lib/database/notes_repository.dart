@@ -427,7 +427,20 @@ class NotesRepository extends ChangeNotifier {
       return false;
     } finally {
       _syncing = false;
+      final done = _syncDone;
+      _syncDone = null;
+      done?.complete();
       notifyListeners();
+    }
+  }
+
+  /// Completes when the running sync ends. Lets a caller that must not race a
+  /// sync (unlock, migration) wait for it instead of skipping it.
+  Completer<void>? _syncDone;
+
+  Future<void> _whenIdle() async {
+    while (_syncing) {
+      await (_syncDone ??= Completer<void>()).future;
     }
   }
 
@@ -605,12 +618,15 @@ class NotesRepository extends ChangeNotifier {
     var changed = false;
     for (final row in rows) {
       if (_userId != forUid) return; // session ended mid-merge
+      // Read before the row is opened: is the cloud copy plain while the vault is unlocked?
+      final plainInCloud = rowNeedsSealing(row, vaultUnlocked: Vault.instance.isUnlocked);
       final opened = await _open(row);
       if (opened == null) continue; // encrypted + locked: retry after unlock
       final remote = Note.fromRemote(opened);
       final local = _notes[remote.id];
 
       if (local == null) {
+        if (plainInCloud) remote.requireResend();
         _notes[remote.id] = remote;
         await _persist(remote.id);
         changed = true;
@@ -621,8 +637,14 @@ class NotesRepository extends ChangeNotifier {
       if (local.dirty) continue;
 
       if (remote.serverVersion > local.serverVersion) {
+        if (plainInCloud) remote.requireResend();
         _notes[remote.id] = remote;
         await _persist(remote.id);
+        changed = true;
+      } else if (plainInCloud && remote.serverVersion == local.serverVersion) {
+        // This device already has that version, but the cloud still holds it as plain text.
+        local.requireResend();
+        await _persist(local.id);
         changed = true;
       }
     }
@@ -635,25 +657,36 @@ class NotesRepository extends ChangeNotifier {
   /// while the vault was off or locked (T2T) are converted to vault notes. It
   /// is idempotent: re-sealing an already-sealed note just rewrites it, so an
   /// interrupted run is safe to repeat.
-  Future<void> migrateToVault() async {
-    if (!Vault.instance.isUnlocked) return;
-    if (_notes.isEmpty) return;
+  ///
+  /// Waits for a sync that is already running first: it may still be pulling notes
+  /// this method has not seen yet, and skipping it (as a busy [syncNow] does) would
+  /// leave those notes plain in the cloud. Returns how many notes are still waiting
+  /// to be sent sealed (0 when the migration finished; more when the Server refused
+  /// for now, for example without enough energy).
+  Future<int> migrateToVault() async {
+    if (!Vault.instance.isUnlocked) return 0;
+    await _whenIdle();
+    if (_notes.isEmpty) return 0;
     debugPrint('NotesRepository: migrating ${_notes.length} notes into the vault');
     for (final n in _notes.values.toList()) {
-      n.dirty = true;
-      // The content is the same but its stored form changes, so it must be sent again.
-      n.syncedSig = '';
+      n.requireResend();
       await _persist(n.id);
     }
     notifyListeners();
     await syncNow();
-    debugPrint('NotesRepository: vault migration complete');
+    final waiting = pendingCount;
+    debugPrint('NotesRepository: vault migration ${waiting == 0 ? 'complete' : 'left $waiting notes waiting'}');
+    return waiting;
   }
 
   /// After unlocking on a device that was holding notes it could not read,
   /// re-read the local cache, pull everything, and fold any plaintext notes
   /// into the vault.
   Future<void> reloadAfterUnlock() async {
+    // A sync that started before the unlock may still be merging rows. Let it finish, so the
+    // reload below sees every row it stored and its late rows are not merged into a cache that
+    // is being rebuilt.
+    await _whenIdle();
     await _loadFromDisk();
     // A locked pull skipped encrypted rows but still advanced the cursor.
     await _resetCursor();
