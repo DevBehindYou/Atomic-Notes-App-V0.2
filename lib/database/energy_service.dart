@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:atomic_notes/api/atomic_notes_api.dart';
 import 'package:atomic_notes/database/energy_models.dart';
+import 'package:atomic_notes/database/energy_store.dart';
 import 'package:atomic_notes/database/note_quota.dart';
 import 'package:flutter/foundation.dart';
 
@@ -16,7 +17,7 @@ import 'package:flutter/foundation.dart';
 /// Modular by design: other features call [convertCoins] and
 /// [upgradeNoteLimit] without importing the Energy screen. Sync is charged by
 /// the Server itself when it runs, so nothing here spends energy.
-class EnergyService extends ChangeNotifier {
+class EnergyService extends ChangeNotifier implements EnergyStore {
   EnergyService._();
   static final EnergyService instance = EnergyService._();
 
@@ -39,13 +40,19 @@ class EnergyService extends ChangeNotifier {
   String? _error;
   String? _boundUser;
 
+  @override
   Wallet get wallet => _wallet;
 
   /// The prices and ceilings the Server enforces.
+  @override
   EnergyLimits get limits => _limits;
+  @override
   List<EnergyTx> get history => _history;
+  @override
   bool get loading => _loading;
+  @override
   String? get error => _error;
+  @override
   bool get hasLoaded => _boundUser != null && _boundUser == _uid;
 
   int get coins => _wallet.coins;
@@ -101,6 +108,7 @@ class EnergyService extends ChangeNotifier {
 
   // ---- reads ------------------------------------------------------------
 
+  @override
   Future<void> refresh() async {
     final uid = _uid;
     if (uid == null) return;
@@ -128,6 +136,7 @@ class EnergyService extends ChangeNotifier {
 
   /// Convert [coins] Atomic Coins into Energy. Returns null on success, or a
   /// user-facing error string (insufficient coins, cap overflow, ...).
+  @override
   Future<String?> convertCoins(int coins) async {
     if (_uid == null) return 'You are signed out.';
     try {
@@ -141,6 +150,7 @@ class EnergyService extends ChangeNotifier {
 
   /// Buys the next 10 notes of capacity for coins. Returns null on success, or a
   /// user-facing message. Safe to repeat: the Server charges a step only once.
+  @override
   Future<String?> upgradeNoteLimit() async {
     if (_uid == null) return 'You are signed out.';
     if (!canRaiseNoteLimit) return 'You already have the most notes possible.';
