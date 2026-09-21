@@ -226,5 +226,59 @@ void main() {
       await tester.pump();
       expect(cardRebuilds, greaterThan(0));
     });
+
+    /// Counts how often each named part of the screen is rebuilt while [act] runs.
+    Future<Map<String, int>> rebuilds(
+      WidgetTester tester,
+      Future<void> Function() act,
+    ) async {
+      final counts = <String, int>{};
+      const watched = {'_TitleRow', '_FilterChips', '_NotesGrid', '_AddMenu'};
+      debugOnRebuildDirtyWidget = (element, builtOnce) {
+        final name = element.widget.runtimeType.toString();
+        if (watched.contains(name)) counts[name] = (counts[name] ?? 0) + 1;
+      };
+      addTearDown(() => debugOnRebuildDirtyWidget = null);
+      await act();
+      await tester.pump();
+      await tester.pump();
+      return counts;
+    }
+
+    testWidgets('typing in the search box rebuilds the list and nothing else', (tester) async {
+      await _open(tester, _source());
+
+      final counts = await rebuilds(
+          tester, () => tester.enterText(find.byType(TextField), 'rocket'));
+
+      expect(counts['_NotesGrid'], greaterThan(0));
+      expect(counts['_TitleRow'], isNull);
+      expect(counts['_FilterChips'], isNull);
+      expect(counts['_AddMenu'], isNull);
+    });
+
+    testWidgets('ticking a checklist row rebuilds the list and the count, not the chips or the add menu',
+        (tester) async {
+      await _open(tester, _source());
+
+      final counts = await rebuilds(tester, () => tester.tap(find.text('milk')));
+
+      expect(counts['_NotesGrid'], greaterThan(0));
+      expect(counts['_TitleRow'], greaterThan(0)); // "1 UNSYNCED" appears
+      expect(counts['_FilterChips'], isNull);
+      expect(counts['_AddMenu'], isNull);
+    });
+
+    testWidgets('changing the filter rebuilds the chips and the list, not the count or the add menu',
+        (tester) async {
+      await _open(tester, _source());
+
+      final counts = await rebuilds(tester, () => tester.tap(find.text('NOTES')));
+
+      expect(counts['_FilterChips'], greaterThan(0));
+      expect(counts['_NotesGrid'], greaterThan(0));
+      expect(counts['_TitleRow'], isNull);
+      expect(counts['_AddMenu'], isNull);
+    });
   });
 }
