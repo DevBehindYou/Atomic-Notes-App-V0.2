@@ -1,7 +1,6 @@
 // The Recycle Bin and Danger Zone screens on top of their cubits, with a fake store. They need
 // neither Hive nor the network.
 
-import 'package:atomic_notes/database/note.dart';
 import 'package:atomic_notes/page/endpage/danger_zone_page.dart';
 import 'package:atomic_notes/page/endpage/recycle_bin_page.dart';
 import 'package:atomic_notes/theme/editorial.dart';
