@@ -140,8 +140,8 @@ void main() {
       expect(find.byType(TextField), findsOneWidget);
 
       await tester.longPress(find.byType(NotesBulder).first);
-      await tester.pump();
-      await tester.pump();
+      // The add menu slides out with the Scaffold's own animation.
+      await tester.pumpAndSettle();
 
       expect(find.text('1 SELECTED'), findsOneWidget);
       expect(find.text('ALL'), findsOneWidget);
@@ -158,8 +158,7 @@ void main() {
       await tester.pump();
 
       await tester.tap(find.text('CANCEL'));
-      await tester.pump();
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.text('NEW NOTE'), findsOneWidget);
       expect(find.byType(TextField), findsOneWidget);
