@@ -4,6 +4,7 @@
 import 'package:atomic_notes/database/note.dart';
 import 'package:atomic_notes/page/home_page.dart';
 import 'package:atomic_notes/state/notes/notes_bloc.dart';
+import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/notes_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -273,7 +274,7 @@ void main() {
         (tester) async {
       await _open(tester, _source());
 
-      final counts = await rebuilds(tester, () => tester.tap(find.text('NOTES')));
+      final counts = await rebuilds(tester, () => tester.tap(find.widgetWithText(DataChip, 'NOTES')));
 
       expect(counts['_FilterChips'], greaterThan(0));
       expect(counts['_NotesGrid'], greaterThan(0));
