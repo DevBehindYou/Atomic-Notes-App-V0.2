@@ -39,12 +39,12 @@ void main() {
 
   group('what the Server sends', () {
     test('the wallet carries the note limit, 20 when it is absent', () {
-      expect(Wallet.fromMap({'coins': 1, 'note_limit': 40}).noteLimit, 40);
-      expect(Wallet.fromMap({'coins': 1}).noteLimit, 20);
+      expect(Wallet.fromMap(const {'coins': 1, 'note_limit': 40}).noteLimit, 40);
+      expect(Wallet.fromMap(const {'coins': 1}).noteLimit, 20);
     });
 
     test('the limits carry the prices and the ceiling', () {
-      final l = EnergyLimits.fromMap({
+      final l = EnergyLimits.fromMap(const {
         'note_limit_free': 20,
         'note_limit_step': 10,
         'note_limit_ceiling': 50,
@@ -59,7 +59,7 @@ void main() {
     });
 
     test('a missing field falls back to the defaults', () {
-      final l = EnergyLimits.fromMap({});
+      final l = EnergyLimits.fromMap(const {});
       expect(l.noteLimitCeiling, 50);
       expect(l.syncInstantCost, 10);
     });

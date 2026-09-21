@@ -41,7 +41,7 @@ void main() {
       expect(half.energyFraction, closeTo(0.5, 1e-9));
     });
     test('fromMap tolerates string numbers and missing cap', () {
-      final w = Wallet.fromMap({'coins': '5', 'energy': 40});
+      final w = Wallet.fromMap(const {'coins': '5', 'energy': 40});
       expect(w.coins, 5);
       expect(w.energy, 40);
       expect(w.energyCap, 120); // default when absent
