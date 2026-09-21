@@ -5,6 +5,7 @@ import 'package:atomic_notes/api/atomic_notes_api.dart';
 import 'package:atomic_notes/database/energy_service.dart';
 import 'package:atomic_notes/database/note.dart';
 import 'package:atomic_notes/database/note_quota.dart';
+import 'package:atomic_notes/database/notes_source.dart';
 import 'package:atomic_notes/database/sync_status.dart';
 import 'package:atomic_notes/security/vault.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -29,7 +30,7 @@ import 'package:hive_ce/hive_ce.dart';
 /// manual sync — a real UX regression from before, not a simplification, and
 /// worth restoring deliberately (websocket push, or at least shorter polling)
 /// rather than treating this comment as still accurate.
-class NotesRepository extends ChangeNotifier {
+class NotesRepository extends ChangeNotifier implements NotesSource {
   NotesRepository._() {
     // The note limit comes from the Server's wallet; the notes screens show it, so they must hear when it moves.
     NoteQuota.changes.addListener(notifyListeners);
@@ -58,6 +59,7 @@ class NotesRepository extends ChangeNotifier {
   bool _syncing = false;
   bool get isSyncing => _syncing;
 
+  @override
   String? lastError;
   DateTime? lastSyncedAt;
   int? _syncCursor;
@@ -244,6 +246,7 @@ class NotesRepository extends ChangeNotifier {
   // ---- reads ------------------------------------------------------------
 
   /// Live notes, tombstones excluded, pinned first.
+  @override
   List<Note> visible({NoteFilter filter = NoteFilter.newest}) {
     final list = _notes.values.where((n) => !n.deleted).toList();
 
@@ -266,14 +269,18 @@ class NotesRepository extends ChangeNotifier {
     return list;
   }
 
+  @override
   int get count => _notes.values.where((n) => !n.deleted).length;
+  @override
   int get pendingCount => _notes.values.where((n) => n.dirty).length;
 
+  @override
   Note? byId(String id) => _notes[id];
 
   // ---- quota ------------------------------------------------------------
 
   /// Notes and to-dos share one allowance — a checklist is a note.
+  @override
   int get limit => NoteQuota.limit;
 
   int get remaining => (limit - count).clamp(0, limit);
@@ -285,6 +292,7 @@ class NotesRepository extends ChangeNotifier {
 
   // ---- writes -----------------------------------------------------------
 
+  @override
   Future<void> save(Note note) async {
     note.touch();
     // Saved without a real change (or edited back to what the cloud holds): nothing to upload.
@@ -297,6 +305,7 @@ class NotesRepository extends ChangeNotifier {
   }
 
   /// Soft delete, so the removal can reach other devices.
+  @override
   Future<void> deleteNotes(Iterable<String> ids) async {
     for (final id in ids) {
       final n = _notes[id];
@@ -374,6 +383,7 @@ class NotesRepository extends ChangeNotifier {
   /// cover the upload, the notes stay safely on the device (still dirty) and
   /// nothing is pushed — so at zero energy local notes keep working but don't
   /// reach the cloud until energy is topped up.
+  @override
   Future<bool> syncNow({bool instant = false}) async {
     if (_syncing) return true;
     final uid = _userId;

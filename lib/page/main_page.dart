@@ -1,15 +1,12 @@
 // ignore_for_file: use_build_context_synchronously, use_super_parameters
 
 
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:atomic_notes/authentication/auth_services/auth_service.dart';
 import 'package:atomic_notes/utility/component/profile_avatar.dart';
-import 'package:atomic_notes/database/energy_service.dart';
 import 'package:atomic_notes/database/notification_service.dart';
-import 'package:atomic_notes/database/notes_repository.dart';
-import 'package:atomic_notes/database/sync_status.dart';
 import 'package:atomic_notes/page/home_page.dart';
 import 'package:atomic_notes/page/settings_page.dart';
+import 'package:atomic_notes/state/notes/notes_bloc.dart';
 import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/intropages/energy_intro_screen.dart';
@@ -18,6 +15,7 @@ import 'package:atomic_notes/utility/component/cloud_button.dart';
 import 'package:atomic_notes/utility/component/energy_popup.dart';
 import 'package:atomic_notes/utility/component/my_snackbar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
 class MainPage extends StatefulWidget {
@@ -29,9 +27,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   final AuthServices serve = AuthServices();
-  final NotesRepository repo = NotesRepository.instance;
   String? username = "@atomicuser";
-  bool _isLoading = false;
   bool _isLoading2 = false;
   int currentIndex = 0;
 
@@ -100,56 +96,18 @@ class _MainPageState extends State<MainPage> {
 
   @override
   void dispose() {
-    _isLoading = false;
     _isLoading2 = false;
     super.dispose();
   }
 
-  // sync notes data to cloud
-  Future<void> _syncData() async {
-    // Read the flag at point of use rather than caching it in initState.
-    // The cached copy went stale as soon as the user toggled cloud sync on
-    // the settings screen, which is why that screen used to kill the process
-    // with exit(0) to force a "restart".
-    if (SyncStatusHelper.isSyncOn) {
-      final connectivityResult = await Connectivity().checkConnectivity();
-      if (!mounted) return;
-      setState(() {
-        _isLoading = true;
-      });
-
-      if (connectivityResult.contains(ConnectivityResult.none)) {
-        const MySnackBar(
-          text: "No Internet Connection!",
-          sec: 1000,
-        ).showMySnackBar(context);
-      } else {
-        // Manual button = INSTANT sync (10 energy). The energy gate lives inside
-        // syncNow: it charges only when there are changes to upload, and refuses
-        // when the balance is short. Automatic/background syncs go through the
-        // same gate at the standard cost (5).
-        final hadPending = repo.pendingCount > 0;
-        final ok = await repo.syncNow(instant: true);
-        if (!mounted) return;
-        MySnackBar(
-          text: ok
-              ? (hadPending
-                  ? "Instant sync  ·  -${EnergyService.syncInstantCost} energy"
-                  : "Already up to date")
-              : (repo.lastError ??
-                  "Sync failed — changes are still only on this device"),
-          sec: ok ? 1600 : 3000,
-        ).showMySnackBar(context);
-      }
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
-    } else {
-      const MySnackBar(sec: 1000, text: "Cloud Sync is Off")
-          .showMySnackBar(context);
-    }
-  }
+  // sync notes data to cloud: the Bloc checks the switch and the connection, runs the sync and
+  // answers with a notice, which the listener in build shows.
+  //
+  // Manual button = INSTANT sync (10 energy). The energy gate lives inside the sync: it charges
+  // only when there are changes to upload, and refuses when the balance is short. Automatic and
+  // background syncs go through the same gate at the standard cost (5).
+  void _syncData() =>
+      context.read<NotesBloc>().add(const NotesSyncRequested(instant: true));
 
   void goToPage(index) {
     setState(() {
@@ -159,6 +117,21 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
+    return BlocListener<NotesBloc, NotesState>(
+      // The answer to the sync button; the notes list shows its own.
+      listenWhen: (previous, current) =>
+          previous.notice != current.notice &&
+          current.notice != null &&
+          current.notice!.fromSync,
+      listener: (context, state) => MySnackBar(
+        text: state.notice!.text,
+        sec: state.notice!.millis,
+      ).showMySnackBar(context),
+      child: _scaffold(context),
+    );
+  }
+
+  Widget _scaffold(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.paper,
       appBar: AppBar(
@@ -231,11 +204,14 @@ class _MainPageState extends State<MainPage> {
           // Tap = sync (unchanged). Long-press = Atomic Energy popup.
           GestureDetector(
             onLongPress: () => showEnergyPopup(context),
-            child: CloudButton(
-              ico: "assets/sync.svg",
-              action: _syncData,
-              clr: 0xff5F5EF7,
-              isLoading: _isLoading,
+            child: BlocSelector<NotesBloc, NotesState, bool>(
+              selector: (state) => state.syncing,
+              builder: (context, syncing) => CloudButton(
+                ico: "assets/sync.svg",
+                action: _syncData,
+                clr: 0xff5F5EF7,
+                isLoading: syncing,
+              ),
             ),
           ),
           const SizedBox(width: AppSpace.md),

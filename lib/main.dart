@@ -9,6 +9,8 @@ import 'package:atomic_notes/database/sync_status.dart';
 import 'package:atomic_notes/profile/profile_store.dart';
 import 'package:atomic_notes/security/screen_security.dart';
 import 'package:atomic_notes/security/vault.dart';
+import 'package:atomic_notes/state/app_bloc_observer.dart';
+import 'package:atomic_notes/state/app_blocs.dart';
 import 'package:atomic_notes/page/endpage/about_us_page.dart';
 import 'package:atomic_notes/page/endpage/bio_auth_page.dart';
 import 'package:atomic_notes/page/endpage/cloud_sync_page.dart';
@@ -34,11 +36,13 @@ import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/intropages/onboarding_screen.dart';
 import 'package:atomic_notes/utility/intropages/energy_intro_screen.dart';
+import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Bloc.observer = const AppBlocObserver();
 
   try {
     // Bounded so startup can't hang forever. ApiClient.init() only reads a
@@ -165,43 +169,45 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      // Shared with SessionGuard so a sign-out can reset the stack even when it
-      // happens off-screen (a background token refresh failing).
-      navigatorKey: SessionGuard.navigatorKey,
-      initialRoute: '/splashpage',
-      routes: {
-        '/loginpage': (context) => const LoginPage(),
-        '/homepage': (context) => const HomePage(),
-        '/splashpage': (context) => const SplashPage(),
-        '/loggedout': (context) => const LoggedOutScreen(),
-        '/mainpage': (context) => const MainPage(),
-        '/settingspage': (context) => const SettingsPage(),
-        '/onboardingscreen': (context) => const OnBoardingScreen(),
-        '/energyintro': (context) => const EnergyIntroScreen(),
-        '/appinfo': (context) => const AppInfo(),
-        '/lockscreen': (context) => const LockScreen(),
-        '/twofactor': (context) => const TwoFactorPage(),
-        '/twofactorgate': (context) => const TwoFactorGatePage(),
-        '/dangerzone': (context) => const DangerZonePage(),
-        '/cloudnotes': (context) => const CloudNotesPage(),
-        '/recyclebin': (context) => const RecycleBinPage(),
-        '/cloudsyncpage': (context) => const CloudSyncPage(),
-        '/biompage': (context) => const BiomPage(),
-        '/encryptionpage': (context) => const EncryptionPage(),
-        '/energypage': (context) => const EnergyPage(),
-        '/notifications': (context) => const NotificationsPage(),
-        '/vaultunlock': (context) => VaultUnlockPage(
-              // `arguments: true` means the splash sent the user here at
-              // launch, so unlocking continues into the app.
-              fromStartup:
-                  ModalRoute.of(context)?.settings.arguments == true,
-            ),
-        '/tcpage': (context) => const TCPage(),
-        '/editprofilepage': (context) => const EditProfilePage(),
-      },
+    return AppBlocs(
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        // Shared with SessionGuard so a sign-out can reset the stack even when it
+        // happens off-screen (a background token refresh failing).
+        navigatorKey: SessionGuard.navigatorKey,
+        initialRoute: '/splashpage',
+        routes: {
+          '/loginpage': (context) => const LoginPage(),
+          '/homepage': (context) => const HomePage(),
+          '/splashpage': (context) => const SplashPage(),
+          '/loggedout': (context) => const LoggedOutScreen(),
+          '/mainpage': (context) => const MainPage(),
+          '/settingspage': (context) => const SettingsPage(),
+          '/onboardingscreen': (context) => const OnBoardingScreen(),
+          '/energyintro': (context) => const EnergyIntroScreen(),
+          '/appinfo': (context) => const AppInfo(),
+          '/lockscreen': (context) => const LockScreen(),
+          '/twofactor': (context) => const TwoFactorPage(),
+          '/twofactorgate': (context) => const TwoFactorGatePage(),
+          '/dangerzone': (context) => const DangerZonePage(),
+          '/cloudnotes': (context) => const CloudNotesPage(),
+          '/recyclebin': (context) => const RecycleBinPage(),
+          '/cloudsyncpage': (context) => const CloudSyncPage(),
+          '/biompage': (context) => const BiomPage(),
+          '/encryptionpage': (context) => const EncryptionPage(),
+          '/energypage': (context) => const EnergyPage(),
+          '/notifications': (context) => const NotificationsPage(),
+          '/vaultunlock': (context) => VaultUnlockPage(
+                // `arguments: true` means the splash sent the user here at
+                // launch, so unlocking continues into the app.
+                fromStartup:
+                    ModalRoute.of(context)?.settings.arguments == true,
+              ),
+          '/tcpage': (context) => const TCPage(),
+          '/editprofilepage': (context) => const EditProfilePage(),
+        },
+      ),
     );
   }
 }
