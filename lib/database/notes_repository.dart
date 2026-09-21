@@ -61,6 +61,7 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
 
   @override
   String? lastError;
+  @override
   DateTime? lastSyncedAt;
   int? _syncCursor;
   static const _pendingPushKey = '__pending_sync_operation';
@@ -84,6 +85,7 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
   Timer? _autoRetry;
 
   /// When the next automatic sync can send changes, or null when it is open now.
+  @override
   DateTime? get nextAutoSyncAt {
     final until = _standardBlockedUntil;
     return until != null && until.isAfter(DateTime.now()) ? until : null;
@@ -725,6 +727,7 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
   ///
   /// A deleted note is a tombstone that keeps its content, so it can be put
   /// back. Its cloud file sits in the Google Drive trash meanwhile.
+  @override
   List<Note> get binNotes {
     final list = _notes.values.where((n) => n.deleted).toList();
     list.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
@@ -733,6 +736,7 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
 
   /// Puts a deleted note back. False when it is not in the bin or the note
   /// limit leaves no room for it.
+  @override
   Future<bool> restoreNote(String id) async {
     final n = _notes[id];
     if (n == null || !n.deleted || isAtLimit) return false;
@@ -749,6 +753,7 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
   /// reached the cloud yet is synced first: forgetting it locally would let the
   /// note come back from the cloud on the next pull. Returns how many were
   /// removed; 0 means nothing was, for example because that sync failed.
+  @override
   Future<int> deleteForever(Iterable<String> ids) async {
     final targets = ids.where((id) => _notes[id]?.deleted == true).toList();
     if (targets.isEmpty) return 0;
@@ -782,6 +787,7 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
   /// never change the notes on this device. It counts rows, not readable notes:
   /// an encrypted row still counts while this device is locked, which is what
   /// makes the on-device and in-cloud numbers comparable.
+  @override
   Future<int?> cloudCount() async {
     if (_userId == null) return null;
     try {
@@ -801,6 +807,7 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
   ///
   /// Deliberately leaves the vault row alone: it holds the phrase verifier, and
   /// dropping it would strand notes still encrypted on other devices.
+  @override
   Future<WipeOutcome> wipeRemote() async {
     if (_userId == null) return const WipeOutcome(false, 'Not signed in.');
     try {
@@ -827,6 +834,7 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
   /// Removes every note from THIS DEVICE only. The cloud copy is not touched, so
   /// the notes download again on the next sync. Notes that were never uploaded
   /// are gone for good: [pendingCount] says how many before the caller asks.
+  @override
   Future<int> wipeLocalNotes() async {
     final removed = _notes.length;
     _notes.clear();
@@ -844,6 +852,7 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
 
   /// Marks every live note as waiting to upload, so the next sync writes all of
   /// them to the cloud. Used to refill a cloud that was wiped.
+  @override
   Future<int> markAllForUpload() async {
     var marked = 0;
     for (final n in _notes.values.toList()) {
@@ -857,11 +866,4 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
     notifyListeners();
     return marked;
   }
-}
-
-/// Result of a wipe: whether it happened, and what to tell the user.
-class WipeOutcome {
-  final bool ok;
-  final String message;
-  const WipeOutcome(this.ok, this.message);
 }

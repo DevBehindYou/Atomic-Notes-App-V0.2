@@ -26,6 +26,15 @@ abstract interface class NotesSource implements Listenable {
   /// The reason the last sync failed, in words for the user.
   String? get lastError;
 
+  /// Notes that were deleted on a device and still wait in the Recycle Bin, newest deletion first.
+  List<Note> get binNotes;
+
+  /// When the last pull finished, or null when this device has not synced since it started.
+  DateTime? get lastSyncedAt;
+
+  /// When an automatic sync can send changes, or null when it is open now.
+  DateTime? get nextAutoSyncAt;
+
   Future<void> save(Note note);
 
   /// Moves the notes to the Recycle Bin (soft delete).
@@ -33,4 +42,29 @@ abstract interface class NotesSource implements Listenable {
 
   /// Pushes waiting changes, then pulls. True when the sync finished cleanly.
   Future<bool> syncNow({bool instant = false});
+
+  /// Puts a deleted note back. False when it is not in the bin or the limit leaves no room.
+  Future<bool> restoreNote(String id);
+
+  /// Removes deleted notes from this device for good. Returns how many were removed.
+  Future<int> deleteForever(Iterable<String> ids);
+
+  /// How many live notes the cloud holds, or null when it cannot be reached. Changes nothing.
+  Future<int?> cloudCount();
+
+  /// Marks every live note as waiting, so the next sync writes all of them to the cloud.
+  Future<int> markAllForUpload();
+
+  /// Empties the cloud copy and leaves this device alone.
+  Future<WipeOutcome> wipeRemote();
+
+  /// Removes every note from this device only. Returns how many.
+  Future<int> wipeLocalNotes();
+}
+
+/// Result of a wipe: whether it happened, and what to tell the user.
+class WipeOutcome {
+  final bool ok;
+  final String message;
+  const WipeOutcome(this.ok, this.message);
 }

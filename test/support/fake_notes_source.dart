@@ -18,6 +18,20 @@ class FakeNotesSource extends ChangeNotifier implements NotesSource {
   @override
   String? lastError;
 
+  @override
+  DateTime? lastSyncedAt;
+
+  @override
+  DateTime? nextAutoSyncAt;
+
+  /// What the next [cloudCount] answers (null: the cloud cannot be reached).
+  int? cloudNotes = 0;
+
+  /// When false, [deleteForever] removes nothing, like a deletion that has not reached the cloud.
+  bool deleteForeverWorks = true;
+  bool wipeRemoteWorks = true;
+  int markAllCalls = 0;
+
   /// What the next [syncNow] answers.
   bool syncResult = true;
   int syncCalls = 0;
@@ -52,6 +66,13 @@ class FakeNotesSource extends ChangeNotifier implements NotesSource {
       if (n.id == id) return n;
     }
     return null;
+  }
+
+  @override
+  List<Note> get binNotes {
+    final list = all.where((n) => n.deleted).toList();
+    list.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return list;
   }
 
   @override
@@ -92,6 +113,53 @@ class FakeNotesSource extends ChangeNotifier implements NotesSource {
     }
     notifyListeners();
     return syncResult;
+  }
+
+  @override
+  Future<bool> restoreNote(String id) async {
+    final n = byId(id);
+    if (n == null || !n.deleted || count >= limit) return false;
+    n.deleted = false;
+    n.touch();
+    notifyListeners();
+    return true;
+  }
+
+  @override
+  Future<int> deleteForever(Iterable<String> ids) async {
+    if (!deleteForeverWorks) return 0;
+    final targets = ids.where((id) => byId(id)?.deleted == true).toList();
+    all.removeWhere((n) => targets.contains(n.id));
+    notifyListeners();
+    return targets.length;
+  }
+
+  @override
+  Future<int?> cloudCount() async => cloudNotes;
+
+  @override
+  Future<int> markAllForUpload() async {
+    markAllCalls++;
+    var marked = 0;
+    for (final n in all.where((n) => !n.deleted)) {
+      n.dirty = true;
+      marked++;
+    }
+    notifyListeners();
+    return marked;
+  }
+
+  @override
+  Future<WipeOutcome> wipeRemote() async => wipeRemoteWorks
+      ? const WipeOutcome(true, 'Cloud notes wiped. The notes on this device are untouched.')
+      : const WipeOutcome(false, 'Could not wipe the cloud.');
+
+  @override
+  Future<int> wipeLocalNotes() async {
+    final removed = all.length;
+    all.clear();
+    notifyListeners();
+    return removed;
   }
 
   /// Tells the listeners without changing anything, like a sync starting or ending.

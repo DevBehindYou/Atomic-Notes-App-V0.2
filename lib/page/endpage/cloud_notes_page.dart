@@ -1,67 +1,51 @@
 import 'package:atomic_notes/database/energy_service.dart';
 import 'package:atomic_notes/database/notes_repository.dart';
+import 'package:atomic_notes/database/notes_source.dart';
 import 'package:atomic_notes/database/sync_status.dart';
+import 'package:atomic_notes/state/cloud_notes/cloud_notes_cubit.dart';
 import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/my_appbar.dart';
 import 'package:atomic_notes/utility/component/my_snackbar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Cloud Notes: this device against the cloud, side by side.
 ///
 /// Checking the cloud only COUNTS its notes. It never pulls or merges anything,
 /// so looking can never change what is on this device.
-class CloudNotesPage extends StatefulWidget {
-  const CloudNotesPage({super.key});
+class CloudNotesPage extends StatelessWidget {
+  /// [source] is only given by tests; the app uses the real notes store.
+  const CloudNotesPage({super.key, this.source});
+
+  final NotesSource? source;
 
   @override
-  State<CloudNotesPage> createState() => _CloudNotesPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider<CloudNotesCubit>(
+      // Count the cloud as soon as the screen opens.
+      create: (_) =>
+          CloudNotesCubit(source: source ?? NotesRepository.instance)..check(),
+      child: const _CloudNotesView(),
+    );
+  }
 }
 
-class _CloudNotesPageState extends State<CloudNotesPage> {
-  final NotesRepository repo = NotesRepository.instance;
-
-  /// Notes in the cloud. Null until a check succeeds, or when it failed.
-  int? _cloud;
-  bool _checked = false;
-  bool _checking = false;
-  bool _working = false;
-  DateTime? _checkedAt;
+class _CloudNotesView extends StatefulWidget {
+  const _CloudNotesView();
 
   @override
-  void initState() {
-    super.initState();
-    _check();
-  }
+  State<_CloudNotesView> createState() => _CloudNotesViewState();
+}
 
-  Future<void> _check() async {
-    if (_checking) return;
-    setState(() => _checking = true);
-    final int? count = await repo.cloudCount();
-    if (!mounted) return;
-    setState(() {
-      _cloud = count;
-      _checked = true;
-      _checking = false;
-      _checkedAt = DateTime.now();
-    });
-  }
-
+class _CloudNotesViewState extends State<_CloudNotesView> {
   Future<void> _sync({required bool uploadAll}) async {
-    if (_working) return;
-    setState(() => _working = true);
-    if (uploadAll) await repo.markAllForUpload();
+    final cubit = context.read<CloudNotesCubit>();
     // Both buttons on this page are instant sync: they send now and cost 10 energy when there is something to send.
-    final bool ok = await repo.syncNow(instant: true);
-    if (!mounted) return;
-    setState(() => _working = false);
-    MySnackBar(
-      text: ok
-          ? (uploadAll ? 'All notes uploaded to the cloud' : 'Synced with the cloud')
-          : (repo.lastError ?? 'Sync failed. Check your connection.'),
-      sec: 3000,
-    ).showMySnackBar(context);
-    await _check();
+    final message = await cubit.sync(uploadAll: uploadAll);
+    if (message == null || !mounted) return;
+    MySnackBar(text: message.text, sec: message.millis).showMySnackBar(context);
+    await cubit.check();
   }
 
   /// "Open" when an automatic sync can send now, else how long until it can.
@@ -77,14 +61,16 @@ class _CloudNotesPageState extends State<CloudNotesPage> {
     return '${l.year}-${p(l.month)}-${p(l.day)} ${p(l.hour)}:${p(l.minute)}';
   }
 
-  _Verdict _verdict(int onDevice, int waiting) {
+  _Verdict _verdict(CloudNotesState state) {
+    final int onDevice = state.onDevice;
+    final int waiting = state.waiting;
     if (!SyncStatusHelper.isSyncOn) {
       return const _Verdict('Sync off',
           'Cloud Sync is turned off, so notes stay on this device only.',
           AppColors.outline);
     }
-    final int? cloud = _cloud;
-    if (!_checked) {
+    final int? cloud = state.cloud;
+    if (!state.checked) {
       return const _Verdict(
           'Checking', 'Counting the notes in your cloud…', AppColors.outline);
     }
@@ -126,16 +112,18 @@ class _CloudNotesPageState extends State<CloudNotesPage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
             AppSpace.md, AppSpace.lg, AppSpace.md, AppSpace.xl),
-        child: AnimatedBuilder(
-          animation: repo,
-          builder: (context, _) {
-            final int onDevice = repo.count;
-            final int waiting = repo.pendingCount;
-            final int synced = onDevice - waiting < 0 ? 0 : onDevice - waiting;
-            final _Verdict verdict = _verdict(onDevice, waiting);
+        child: BlocBuilder<CloudNotesCubit, CloudNotesState>(
+          builder: (context, state) {
+            final cubit = context.read<CloudNotesCubit>();
+            final int onDevice = state.onDevice;
+            final int waiting = state.waiting;
+            final int synced = state.synced;
+            final _Verdict verdict = _verdict(state);
             final bool syncOn = SyncStatusHelper.isSyncOn;
-            final int? cloud = _cloud;
+            final int? cloud = state.cloud;
             final String cloudText = cloud?.toString() ?? '—';
+            final bool checking = state.checking;
+            final bool working = state.working;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -167,7 +155,7 @@ class _CloudNotesPageState extends State<CloudNotesPage> {
                           SizedBox(
                             width: 44,
                             child: Center(
-                              child: (_checking || _working)
+                              child: (checking || working)
                                   ? const SizedBox(
                                       height: 18,
                                       width: 18,
@@ -229,15 +217,15 @@ class _CloudNotesPageState extends State<CloudNotesPage> {
                     children: [
                       _LedgerRow(
                           label: 'Last sync',
-                          value: repo.lastSyncedAt == null
+                          value: state.lastSyncedAt == null
                               ? 'Never'
-                              : _stamp(repo.lastSyncedAt!)),
+                              : _stamp(state.lastSyncedAt!)),
                       const SizedBox(height: AppSpace.sm),
                       const HairRule(),
                       const SizedBox(height: AppSpace.sm),
                       _LedgerRow(
                           label: 'Last check',
-                          value: _checkedAt == null ? '—' : _stamp(_checkedAt!)),
+                          value: state.checkedAt == null ? '—' : _stamp(state.checkedAt!)),
                       const SizedBox(height: AppSpace.sm),
                       const HairRule(),
                       const SizedBox(height: AppSpace.sm),
@@ -248,7 +236,7 @@ class _CloudNotesPageState extends State<CloudNotesPage> {
                       const SizedBox(height: AppSpace.sm),
                       _LedgerRow(
                           label: 'Automatic sync',
-                          value: _autoSyncText(repo.nextAutoSyncAt)),
+                          value: _autoSyncText(state.nextAutoSyncAt)),
                     ],
                   ),
                 ),
@@ -258,14 +246,14 @@ class _CloudNotesPageState extends State<CloudNotesPage> {
                   label: 'Check cloud',
                   icon: Icons.cloud_sync_outlined,
                   signal: true,
-                  loading: _checking,
-                  onTap: (_working || _checking) ? null : _check,
+                  loading: checking,
+                  onTap: (working || checking) ? null : cubit.check,
                 ),
                 const SizedBox(height: AppSpace.sm + 2),
                 GhostButton(
                   label: 'Sync now  ·  ${EnergyService.syncInstantCost} energy',
                   icon: Icons.sync,
-                  onTap: (!syncOn || _working || _checking)
+                  onTap: (!syncOn || working || checking)
                       ? null
                       : () => _sync(uploadAll: false),
                 ),
@@ -274,7 +262,7 @@ class _CloudNotesPageState extends State<CloudNotesPage> {
                   GhostButton(
                     label: 'Upload all  ·  ${EnergyService.syncInstantCost} energy',
                     icon: Icons.cloud_upload_outlined,
-                    onTap: (_working || _checking)
+                    onTap: (working || checking)
                         ? null
                         : () => _sync(uploadAll: true),
                   ),

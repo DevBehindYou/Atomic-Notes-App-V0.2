@@ -33,6 +33,7 @@ final class NotesState extends Equatable {
     this.count = 0,
     this.limit = NoteQuota.freeLimit,
     this.pending = 0,
+    this.binCount = 0,
     this.syncing = false,
     this.notice,
   });
@@ -53,6 +54,9 @@ final class NotesState extends Equatable {
 
   /// Notes waiting to be sent to the cloud.
   final int pending;
+
+  /// Notes in the Recycle Bin.
+  final int binCount;
 
   /// The sync button was pressed and has not finished.
   final bool syncing;
@@ -78,6 +82,7 @@ final class NotesState extends Equatable {
     int? count,
     int? limit,
     int? pending,
+    int? binCount,
     bool? syncing,
     NotesNotice? notice,
   }) =>
@@ -90,6 +95,7 @@ final class NotesState extends Equatable {
         count: count ?? this.count,
         limit: limit ?? this.limit,
         pending: pending ?? this.pending,
+        binCount: binCount ?? this.binCount,
         syncing: syncing ?? this.syncing,
         notice: notice ?? this.notice,
       );
@@ -103,6 +109,7 @@ final class NotesState extends Equatable {
         count,
         limit,
         pending,
+        binCount,
         syncing,
         notice,
       ];

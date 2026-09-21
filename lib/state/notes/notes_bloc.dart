@@ -1,6 +1,7 @@
 import 'package:atomic_notes/database/note.dart';
 import 'package:atomic_notes/database/note_quota.dart';
 import 'package:atomic_notes/database/notes_source.dart';
+import 'package:atomic_notes/state/ui_message.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
@@ -75,17 +76,14 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
         base.selected.where((id) => !(source.byId(id)?.deleted ?? true)).toSet();
     return base.copyWith(
       notes: List<Note>.unmodifiable(shown),
-      signature: _signature(shown),
+      signature: noteSignature(shown),
       selected: stillThere.length == base.selected.length ? base.selected : stillThere,
       count: source.count,
       limit: source.limit,
       pending: source.pendingCount,
+      binCount: source.binNotes.length,
     );
   }
-
-  static int _signature(List<Note> notes) => Object.hashAll(notes.map((n) =>
-      Object.hash(n.id, n.updatedAt.microsecondsSinceEpoch, n.dirty, n.deleted,
-          n.pinned, n.serverVersion)));
 
   NotesNotice _notice(String text, int millis, {bool fromSync = false}) =>
       NotesNotice(
