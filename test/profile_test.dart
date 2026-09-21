@@ -5,11 +5,13 @@ import 'dart:io';
 
 import 'package:atomic_notes/page/endpage/edit_profile_page.dart';
 import 'package:atomic_notes/profile/profile_store.dart';
+import 'package:atomic_notes/state/profile/profile_cubit.dart';
 import 'package:atomic_notes/utility/component/avatar_picker_dialog.dart';
 import 'package:atomic_notes/utility/component/profile_avatar.dart';
 import 'package:atomic_notes/utility/component/settings_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void _phone(WidgetTester tester) {
@@ -19,10 +21,17 @@ void _phone(WidgetTester tester) {
   addTearDown(tester.view.resetDevicePixelRatio);
 }
 
+/// The app with the profile state above it, as [AppBlocs] puts it in the real app.
+Widget _app(Widget home, {Map<String, WidgetBuilder> routes = const {}}) =>
+    BlocProvider<ProfileCubit>(
+      create: (_) => ProfileCubit(store: ProfileStore.instance),
+      child: MaterialApp(routes: routes, home: home),
+    );
+
 Future<void> _openPicker(WidgetTester tester) async {
   await tester.pumpWidget(
-    MaterialApp(
-      home: Builder(
+    _app(
+      Builder(
         builder: (context) => Scaffold(
           body: Center(
             child: TextButton(
@@ -138,9 +147,7 @@ void main() {
 
   testWidgets('the avatar widget follows the store', (tester) async {
     _phone(tester);
-    await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: ProfileAvatar(size: 64))),
-    );
+    await tester.pumpWidget(_app(const Scaffold(body: ProfileAvatar(size: 64))));
     String shown() =>
         (tester.widget<Image>(find.byType(Image)).image as AssetImage)
             .assetName;
@@ -224,9 +231,9 @@ void main() {
     Future<void> openPage(WidgetTester tester) async {
       _phone(tester);
       await tester.pumpWidget(
-        MaterialApp(
+        _app(
+          const EditProfilePage(),
           routes: {'/twofactor': (_) => const Scaffold(body: Text('2FA PAGE'))},
-          home: const EditProfilePage(),
         ),
       );
       await tester.pump();

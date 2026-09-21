@@ -1,5 +1,6 @@
 import 'package:atomic_notes/api/atomic_notes_api.dart';
 import 'package:atomic_notes/database/notification_models.dart';
+import 'package:atomic_notes/database/notifications_source.dart';
 import 'package:flutter/foundation.dart';
 
 /// Reads the in-app notification feed and tracks per-user read/dismiss state.
@@ -14,7 +15,7 @@ import 'package:flutter/foundation.dart';
 /// mark-read/dismiss just no-op locally. `unreadCount` therefore reads 0
 /// everywhere it's shown, which is honest given there is nothing behind it
 /// yet — not a bug to chase if you see it.
-class NotificationService extends ChangeNotifier {
+class NotificationService extends ChangeNotifier implements NotificationsSource {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
 
@@ -25,8 +26,11 @@ class NotificationService extends ChangeNotifier {
   String? _error;
   String? _boundUser;
 
+  @override
   List<AppNotification> get items => _items;
+  @override
   bool get loading => _loading;
+  @override
   String? get error => _error;
   int get unreadCount => _items.where((n) => !n.isRead).length;
 
@@ -47,18 +51,22 @@ class NotificationService extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
   Future<void> refresh() async {
     // Not migrated yet — see class doc comment.
   }
 
+  @override
   Future<void> markRead(String id) async {
     // Not migrated yet — see class doc comment.
   }
 
+  @override
   Future<void> markAllRead() async {
     // Not migrated yet — see class doc comment.
   }
 
+  @override
   Future<void> dismiss(String id) async {
     // Not migrated yet — see class doc comment.
   }

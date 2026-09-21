@@ -1,7 +1,11 @@
 import 'package:atomic_notes/database/energy_service.dart';
 import 'package:atomic_notes/database/notes_repository.dart';
+import 'package:atomic_notes/database/notification_service.dart';
 import 'package:atomic_notes/database/sync_status.dart';
+import 'package:atomic_notes/profile/profile_store.dart';
 import 'package:atomic_notes/state/notes/notes_bloc.dart';
+import 'package:atomic_notes/state/notifications/notifications_cubit.dart';
+import 'package:atomic_notes/state/profile/profile_cubit.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,6 +27,13 @@ class AppBlocs extends StatelessWidget {
               isOnline: _hasConnection,
               instantSyncCost: () => EnergyService.syncInstantCost,
             ),
+          ),
+          BlocProvider<ProfileCubit>(
+            create: (_) => ProfileCubit(store: ProfileStore.instance),
+          ),
+          BlocProvider<NotificationsCubit>(
+            create: (_) =>
+                NotificationsCubit(source: NotificationService.instance),
           ),
         ],
         child: child,

@@ -3,10 +3,11 @@
 
 import 'package:atomic_notes/authentication/auth_services/auth_service.dart';
 import 'package:atomic_notes/utility/component/profile_avatar.dart';
-import 'package:atomic_notes/database/notification_service.dart';
 import 'package:atomic_notes/page/home_page.dart';
 import 'package:atomic_notes/page/settings_page.dart';
 import 'package:atomic_notes/state/notes/notes_bloc.dart';
+import 'package:atomic_notes/state/notifications/notifications_cubit.dart';
+import 'package:atomic_notes/state/profile/profile_cubit.dart';
 import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/intropages/energy_intro_screen.dart';
@@ -50,6 +51,8 @@ class _MainPageState extends State<MainPage> {
     // the login page so Back walked straight back into the authenticated app.
     _getUserName();
     super.initState();
+    // The picture is kept per account and nothing announces a new sign-in, so read it afresh.
+    context.read<ProfileCubit>().refresh();
     _maybeShowEnergyIntro();
   }
 
@@ -296,10 +299,9 @@ class _NotificationBell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: NotificationService.instance,
-      builder: (context, _) {
-        final count = NotificationService.instance.unreadCount;
+    return BlocSelector<NotificationsCubit, NotificationsState, int>(
+      selector: (state) => state.unreadCount,
+      builder: (context, count) {
         return GestureDetector(
           onTap: () => Navigator.pushNamed(context, '/notifications'),
           behavior: HitTestBehavior.opaque,

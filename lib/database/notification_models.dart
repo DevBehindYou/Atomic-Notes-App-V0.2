@@ -1,7 +1,9 @@
+import 'package:equatable/equatable.dart';
+
 /// In-app notification model. Mirrors the `notifications` table joined with the
 /// caller's `user_notifications` state (see supabase/migrations/008). Plain data
 /// type; icon/colour mapping lives in the UI.
-class AppNotification {
+class AppNotification extends Equatable {
   final String id;
   final String type;
   final String subject;
@@ -37,6 +39,24 @@ class AppNotification {
     required this.dismissedAt,
     required this.dismissible,
   });
+
+  @override
+  List<Object?> get props => [
+        id,
+        type,
+        subject,
+        description,
+        priority,
+        status,
+        action,
+        actionUrl,
+        icon,
+        createdAt,
+        expiresAt,
+        isRead,
+        dismissedAt,
+        dismissible,
+      ];
 
   bool get isCritical => priority == 'critical';
   bool get hasAction =>
