@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'support/fake_notes_source.dart';
 
 void _tall(WidgetTester tester) {
-  tester.view.physicalSize = const Size(1080, 3000);
+  tester.view.physicalSize = const Size(1080, 4800);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
