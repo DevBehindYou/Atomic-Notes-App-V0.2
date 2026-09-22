@@ -4,6 +4,7 @@
 import 'package:atomic_notes/database/note.dart';
 import 'package:atomic_notes/page/home_page.dart';
 import 'package:atomic_notes/state/notes/notes_bloc.dart';
+import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/notes_builder.dart';
 import 'package:flutter/material.dart';
@@ -229,15 +230,26 @@ void main() {
     });
 
     /// Counts how often each named part of the screen is rebuilt while [act] runs.
+    ///
+    /// `_TitleRow`, `_FilterChips`, `_NotesGrid` and `_AddMenu` are built once in
+    /// [_HomePageState.initState] and never touched again; the Bloc widgets rebuild
+    /// *inside* them, so their own elements never go through `rebuild()`. Instead this
+    /// watches what each part actually draws: the cards, the "Notes" / "N selected"
+    /// heading, the filter chips and the "NEW NOTE" label.
     Future<Map<String, int>> rebuilds(
       WidgetTester tester,
       Future<void> Function() act,
     ) async {
       final counts = <String, int>{};
-      const watched = {'_TitleRow', '_FilterChips', '_NotesGrid', '_AddMenu'};
+      void mark(String name) => counts[name] = (counts[name] ?? 0) + 1;
       debugOnRebuildDirtyWidget = (element, builtOnce) {
-        final name = element.widget.runtimeType.toString();
-        if (watched.contains(name)) counts[name] = (counts[name] ?? 0) + 1;
+        final widget = element.widget;
+        if (widget is NotesBulder) mark('cards');
+        if (widget is EditorialHeading && widget.style == AppType.headlineLg) {
+          mark('heading');
+        }
+        if (widget is DataChip) mark('chips');
+        if (widget is MonoLabel && widget.text == 'NEW NOTE') mark('newNote');
       };
       addTearDown(() => debugOnRebuildDirtyWidget = null);
       await act();
@@ -252,10 +264,10 @@ void main() {
       final counts = await rebuilds(
           tester, () => tester.enterText(find.byType(TextField), 'rocket'));
 
-      expect(counts['_NotesGrid'], greaterThan(0));
-      expect(counts['_TitleRow'], isNull);
-      expect(counts['_FilterChips'], isNull);
-      expect(counts['_AddMenu'], isNull);
+      expect(counts['cards'], greaterThan(0));
+      expect(counts['heading'], isNull);
+      expect(counts['chips'], isNull);
+      expect(counts['newNote'], isNull);
     });
 
     testWidgets('ticking a checklist row rebuilds the list and the count, not the chips or the add menu',
@@ -264,10 +276,10 @@ void main() {
 
       final counts = await rebuilds(tester, () => tester.tap(find.text('milk')));
 
-      expect(counts['_NotesGrid'], greaterThan(0));
-      expect(counts['_TitleRow'], greaterThan(0)); // "1 UNSYNCED" appears
-      expect(counts['_FilterChips'], isNull);
-      expect(counts['_AddMenu'], isNull);
+      expect(counts['cards'], greaterThan(0));
+      expect(counts['heading'], greaterThan(0)); // "1 UNSYNCED" appears
+      expect(counts['chips'], isNull);
+      expect(counts['newNote'], isNull);
     });
 
     testWidgets('changing the filter rebuilds the chips and the list, not the count or the add menu',
@@ -276,10 +288,10 @@ void main() {
 
       final counts = await rebuilds(tester, () => tester.tap(find.widgetWithText(DataChip, 'NOTES')));
 
-      expect(counts['_FilterChips'], greaterThan(0));
-      expect(counts['_NotesGrid'], greaterThan(0));
-      expect(counts['_TitleRow'], isNull);
-      expect(counts['_AddMenu'], isNull);
+      expect(counts['chips'], greaterThan(0));
+      expect(counts['cards'], greaterThan(0));
+      expect(counts['heading'], isNull);
+      expect(counts['newNote'], isNull);
     });
   });
 }
