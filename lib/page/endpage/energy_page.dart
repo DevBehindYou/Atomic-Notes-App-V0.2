@@ -366,13 +366,21 @@ class _EnergyViewState extends State<_EnergyView> {
                   child: Padding(
                     padding: EdgeInsets.only(
                         right: tier == l.noteLimitTiers.last ? 0 : 4),
-                    child: MonoLabel(
-                      tier.name,
-                      small: true,
-                      align: TextAlign.center,
-                      color: tier.limit <= limit
-                          ? AppColors.ink
-                          : AppColors.slateData,
+                    // A FittedBox, not MonoLabel directly: "Antimatter" and
+                    // "Strangelet" are wider than a fifth of the row, and
+                    // wrapping mid-word ("ANTIMATTE" / "R") reads worse than
+                    // shrinking to fit one line.
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        tier.name.toUpperCase(),
+                        maxLines: 1,
+                        style: AppType.labelMonoSm.copyWith(
+                          color: tier.limit <= limit
+                              ? AppColors.ink
+                              : AppColors.slateData,
+                        ),
+                      ),
                     ),
                   ),
                 ),
