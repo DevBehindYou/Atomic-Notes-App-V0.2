@@ -92,14 +92,17 @@ class _EncryptionPageState extends State<EncryptionPage> {
     try {
       await Vault.instance.createVault(_phrase);
       // Fold every existing plaintext note into the vault.
-      await NotesRepository.instance.migrateToVault();
+      final waiting = await NotesRepository.instance.migrateToVault();
       if (!mounted) return;
       setState(() {
         _loading = false;
         _phrase = const [];
         _step = _Step.intro;
       });
-      _toast('Encryption is on. Your notes are now end-to-end encrypted.');
+      _toast(waiting == 0
+          ? 'Encryption is on. Your notes are now end-to-end encrypted.'
+          : 'Encryption is on. $waiting ${waiting == 1 ? 'note is' : 'notes are'} still plain in the cloud '
+              'and will be encrypted at the next sync.');
     } on VaultAlreadyExistsError {
       if (!mounted) return;
       setState(() {

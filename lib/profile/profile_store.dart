@@ -1,4 +1,5 @@
 import 'package:atomic_notes/api/atomic_notes_api.dart';
+import 'package:atomic_notes/profile/profile_source.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive_ce/hive_ce.dart';
 
@@ -35,7 +36,7 @@ class Avatars {
 /// Neither is sent to the server. The picture is one of the bundled avatars, so
 /// only its name is stored, per account, in a small Hive box. Until [init] has
 /// run (as in widget tests) the values are held in memory instead.
-class ProfileStore extends ChangeNotifier {
+class ProfileStore extends ChangeNotifier implements ProfileSource {
   ProfileStore._();
 
   static final ProfileStore instance = ProfileStore._();
@@ -72,6 +73,7 @@ class ProfileStore extends ChangeNotifier {
   }
 
   /// The asset to draw: the chosen avatar, or the default photo.
+  @override
   String get avatarAsset {
     final Object? saved = _get(_avatarKey);
     return saved is String && Avatars.isKnown(saved)
@@ -83,6 +85,7 @@ class ProfileStore extends ChangeNotifier {
 
   /// Pass null to go back to the default photo. Anything that is not one of
   /// the bundled avatars is ignored.
+  @override
   Future<void> setAvatar(String? asset) async {
     if (asset == null) {
       await _remove(_avatarKey);
@@ -95,11 +98,13 @@ class ProfileStore extends ChangeNotifier {
   }
 
   /// A display-only switch: it changes nothing else in the app.
+  @override
   bool get publicProfile {
     final Object? saved = _get(_publicKey);
     return saved is bool ? saved : true;
   }
 
+  @override
   Future<void> setPublicProfile(bool value) async {
     await _put(_publicKey, value);
     notifyListeners();

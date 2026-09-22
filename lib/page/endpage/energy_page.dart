@@ -2,7 +2,10 @@
 
 import 'package:atomic_notes/database/energy_models.dart';
 import 'package:atomic_notes/database/energy_service.dart';
+import 'package:atomic_notes/database/energy_store.dart';
 import 'package:atomic_notes/database/notes_repository.dart';
+import 'package:atomic_notes/database/notes_source.dart';
+import 'package:atomic_notes/state/energy/energy_cubit.dart';
 import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/atomic_icon.dart';
@@ -11,33 +14,49 @@ import 'package:atomic_notes/utility/component/logout_dialogbox.dart';
 import 'package:atomic_notes/utility/component/my_appbar.dart';
 import 'package:atomic_notes/utility/component/my_snackbar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// The dedicated Atomic Energy + Atomic Coins screen. Reads everything from
+/// The dedicated Atomic Energy + Atomic Coins screen. Reads everything through [EnergyCubit] from
 /// [EnergyService]; never computes a balance itself.
-class EnergyPage extends StatefulWidget {
-  const EnergyPage({super.key});
+class EnergyPage extends StatelessWidget {
+  /// [store] and [notes] are only given by tests; the app uses the real ones.
+  const EnergyPage({super.key, this.store, this.notes});
+
+  final EnergyStore? store;
+  final NotesSource? notes;
 
   @override
-  State<EnergyPage> createState() => _EnergyPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider<EnergyCubit>(
+      // Read fresh balances as soon as the screen opens; it draws the cached ones meanwhile.
+      create: (_) => EnergyCubit(
+        store: store ?? EnergyService.instance,
+        notes: notes ?? NotesRepository.instance,
+      )..refresh(),
+      child: const _EnergyView(),
+    );
+  }
 }
 
-class _EnergyPageState extends State<EnergyPage> {
-  final EnergyService energy = EnergyService.instance;
+class _EnergyView extends StatefulWidget {
+  const _EnergyView();
+
+  @override
+  State<_EnergyView> createState() => _EnergyViewState();
+}
+
+class _EnergyViewState extends State<_EnergyView> {
+  EnergyCubit get _cubit => context.read<EnergyCubit>();
 
   /// How many activity rows are visible; "Load more" adds another page.
   static const int _pageSize = 7;
   int _shown = _pageSize;
 
-  @override
-  void initState() {
-    super.initState();
-    energy.refresh();
-  }
-
   // ---- actions ----------------------------------------------------------
 
   Future<void> _convert() async {
-    final maxCoins = energy.coins;
+    final now = _cubit.state;
+    final maxCoins = now.coins;
     if (maxCoins <= 0) {
       const MySnackBar(text: 'No Atomic Coins to convert yet.', sec: 2000)
           .showMySnackBar(context);
@@ -49,12 +68,12 @@ class _EnergyPageState extends State<EnergyPage> {
       showDragHandle: true,
       builder: (ctx) => _ConvertSheet(
         maxCoins: maxCoins,
-        energy: energy.energy,
-        energyCap: energy.energyCap,
+        energy: now.energy,
+        energyCap: now.energyCap,
       ),
     );
     if (chosen == null || chosen <= 0) return;
-    final err = await energy.convertCoins(chosen);
+    final err = await _cubit.convertCoins(chosen);
     if (!mounted) return;
     MySnackBar(
       text: err ??
@@ -65,18 +84,20 @@ class _EnergyPageState extends State<EnergyPage> {
   }
 
   Future<void> _raiseLimit() async {
-    final l = energy.limits;
+    final cubit = _cubit;
+    final now = cubit.state;
+    final l = now.limits;
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (_) => DialogBoxLogout(
         text: 'Spend ${l.noteLimitStepCostCoins} coins to raise your note limit '
-            'from ${energy.noteLimit} to ${energy.nextNoteLimit}?',
+            'from ${now.noteLimit} to ${now.nextNoteLimit}?',
         action: () async {
-          final err = await energy.upgradeNoteLimit();
+          final err = await cubit.upgradeNoteLimit();
           if (!mounted) return;
           MySnackBar(
-            text: err ?? 'You can now keep ${energy.noteLimit} notes.',
+            text: err ?? 'You can now keep ${cubit.state.noteLimit} notes.',
             sec: 3000,
           ).showMySnackBar(context);
         },
@@ -85,9 +106,10 @@ class _EnergyPageState extends State<EnergyPage> {
   }
 
   void _needCoins() {
+    final now = _cubit.state;
     MySnackBar(
-      text: 'The next ${energy.limits.noteLimitStep} notes cost '
-          '${energy.limits.noteLimitStepCostCoins} coins. You have ${energy.coins}.',
+      text: 'The next ${now.limits.noteLimitStep} notes cost '
+          '${now.limits.noteLimitStepCostCoins} coins. You have ${now.coins}.',
       sec: 3000,
     ).showMySnackBar(context);
   }
@@ -136,11 +158,10 @@ class _EnergyPageState extends State<EnergyPage> {
     return Scaffold(
       backgroundColor: AppColors.paper,
       appBar: const MyAppBar(text: "Atomic Energy"),
-      body: AnimatedBuilder(
-        animation: energy,
-        builder: (context, _) {
+      body: BlocBuilder<EnergyCubit, EnergyState>(
+        builder: (context, state) {
           // Loading state (first load, nothing cached yet).
-          if (energy.loading && !energy.hasLoaded) {
+          if (state.loading && !state.hasLoaded) {
             return const Center(
               child: SizedBox(
                 height: 22,
@@ -152,16 +173,16 @@ class _EnergyPageState extends State<EnergyPage> {
           }
           return RefreshIndicator(
             color: AppColors.signal,
-            onRefresh: energy.refresh,
+            onRefresh: _cubit.refresh,
             child: ListView(
               padding: const EdgeInsets.fromLTRB(
                   AppSpace.md, AppSpace.lg, AppSpace.md, AppSpace.xl),
               children: [
-                _energyHero(),
+                _energyHero(state),
                 const SizedBox(height: AppSpace.sm),
-                _coinsModule(),
+                _coinsModule(state),
                 const SizedBox(height: AppSpace.sm),
-                _capacityModule(),
+                _capacityModule(state),
                 const SizedBox(height: AppSpace.md),
                 GhostButton(
                   label: 'How Atomic Energy works',
@@ -169,7 +190,7 @@ class _EnergyPageState extends State<EnergyPage> {
                   onTap: () => Navigator.pushNamed(context, '/energyintro'),
                 ),
                 const SizedBox(height: AppSpace.lg),
-                _activity(),
+                _activity(state),
               ],
             ),
           );
@@ -178,7 +199,7 @@ class _EnergyPageState extends State<EnergyPage> {
     );
   }
 
-  Widget _energyHero() {
+  Widget _energyHero(EnergyState state) {
     return EditorialModule(
       inverted: true,
       padding: const EdgeInsets.all(AppSpace.lg),
@@ -195,11 +216,11 @@ class _EnergyPageState extends State<EnergyPage> {
                     const MonoLabel('ATOMIC ENERGY', color: AppColors.signal),
                     const SizedBox(height: AppSpace.xs),
                     Text(
-                      '${energy.energy}',
+                      '${state.energy}',
                       style: AppType.statNumber.copyWith(color: AppColors.paper),
                     ),
                     Text(
-                      'of ${energy.energyCap} capacity',
+                      'of ${state.energyCap} capacity',
                       style: AppType.labelMonoSm
                           .copyWith(color: AppColors.outlineVariant),
                     ),
@@ -211,9 +232,9 @@ class _EnergyPageState extends State<EnergyPage> {
           ),
           const SizedBox(height: AppSpace.md),
           EnergyBar(
-            fraction: energy.wallet.energyFraction,
+            fraction: state.wallet.energyFraction,
             height: 12,
-            color: EnergyBar.colorFor(energy.energy),
+            color: EnergyBar.colorFor(state.energy),
           ),
           const SizedBox(height: AppSpace.sm),
           Text(
@@ -226,8 +247,8 @@ class _EnergyPageState extends State<EnergyPage> {
     );
   }
 
-  Widget _coinsModule() {
-    final noCoins = energy.coins <= 0;
+  Widget _coinsModule(EnergyState state) {
+    final noCoins = state.coins <= 0;
     return EditorialModule(
       padding: const EdgeInsets.all(AppSpace.md),
       child: Column(
@@ -247,7 +268,7 @@ class _EnergyPageState extends State<EnergyPage> {
                   ],
                 ),
               ),
-              Text('${energy.coins}', style: AppType.statNumber),
+              Text('${state.coins}', style: AppType.statNumber),
             ],
           ),
           const SizedBox(height: AppSpace.md),
@@ -269,11 +290,11 @@ class _EnergyPageState extends State<EnergyPage> {
   }
 
   /// How many notes the account can hold, and the way to raise it with coins.
-  Widget _capacityModule() {
-    final l = energy.limits;
-    final int used = NotesRepository.instance.count;
-    final int limit = energy.noteLimit;
-    final bool atCeiling = !energy.canRaiseNoteLimit;
+  Widget _capacityModule(EnergyState state) {
+    final l = state.limits;
+    final int used = state.notesUsed;
+    final int limit = state.noteLimit;
+    final bool atCeiling = !state.canRaiseNoteLimit;
     return EditorialModule(
       padding: const EdgeInsets.all(AppSpace.md),
       child: Column(
@@ -345,7 +366,7 @@ class _EnergyPageState extends State<EnergyPage> {
             InkActionButton(
               label: 'Add ${l.noteLimitStep} notes  ·  ${l.noteLimitStepCostCoins} coins',
               icon: Icons.add,
-              onTap: energy.canAffordNoteLimit ? _raiseLimit : _needCoins,
+              onTap: state.canAffordNoteLimit ? _raiseLimit : _needCoins,
             ),
           ],
         ],
@@ -353,8 +374,8 @@ class _EnergyPageState extends State<EnergyPage> {
     );
   }
 
-  Widget _activity() {
-    final all = energy.history;
+  Widget _activity(EnergyState state) {
+    final all = state.history;
     final shown = all.take(_shown).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -364,14 +385,14 @@ class _EnergyPageState extends State<EnergyPage> {
           trailing: GestureDetector(
             onTap: () {
               setState(() => _shown = _pageSize);
-              energy.refresh();
+              _cubit.refresh();
             },
             behavior: HitTestBehavior.opaque,
             child: const Icon(Icons.refresh, size: 18, color: AppColors.ink),
           ),
         ),
         const SizedBox(height: AppSpace.md),
-        if (energy.error != null)
+        if (state.error != null)
           _note('Could not load activity. Pull down to retry.')
         else if (all.isEmpty)
           _note('No transactions yet. Daily energy and conversions will '

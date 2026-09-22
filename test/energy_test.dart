@@ -41,7 +41,7 @@ void main() {
       expect(half.energyFraction, closeTo(0.5, 1e-9));
     });
     test('fromMap tolerates string numbers and missing cap', () {
-      final w = Wallet.fromMap({'coins': '5', 'energy': 40});
+      final w = Wallet.fromMap(const {'coins': '5', 'energy': 40});
       expect(w.coins, 5);
       expect(w.energy, 40);
       expect(w.energyCap, 120); // default when absent
@@ -66,7 +66,7 @@ void main() {
 
   group('AppNotification.fromMap', () {
     test('parses a full row and detects a valid CTA', () {
-      final n = AppNotification.fromMap({
+      final n = AppNotification.fromMap(const {
         'id': 'notif_1',
         'type': 'server_down',
         'subject': 'Sync down',
@@ -86,7 +86,7 @@ void main() {
       expect(n.expiresAt, isNull);
     });
     test('a missing/empty CTA is not treated as actionable', () {
-      final n = AppNotification.fromMap({
+      final n = AppNotification.fromMap(const {
         'id': 'notif_2',
         'type': 'general',
         'subject': 'Hello',

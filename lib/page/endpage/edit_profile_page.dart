@@ -1,7 +1,7 @@
 import 'package:atomic_notes/api/atomic_notes_api.dart';
 import 'package:atomic_notes/authentication/auth_services/auth_service.dart';
-import 'package:atomic_notes/profile/profile_store.dart';
 import 'package:atomic_notes/security/two_factor.dart';
+import 'package:atomic_notes/state/profile/profile_cubit.dart';
 import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/avatar_picker_dialog.dart';
@@ -12,6 +12,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Profile: the picture, the username, and the privacy and security choices.
 class EditProfilePage extends StatefulWidget {
@@ -278,8 +279,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   // ---- privacy and security -----------------------------------------------
 
   Widget _privacy() {
-    return AnimatedBuilder(
-      animation: Listenable.merge([ProfileStore.instance, TwoFactor.instance]),
+    return BlocBuilder<ProfileCubit, ProfileState>(
+      builder: (context, profile) => AnimatedBuilder(
+      animation: TwoFactor.instance,
       builder: (context, _) {
         final bool armed = TwoFactor.instance.isArmed;
         return EditorialModule(
@@ -294,9 +296,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 value: const Text('Allow others to discover your profile',
                     style: AppType.bodySm),
                 trailing: CupertinoSwitch(
-                  value: ProfileStore.instance.publicProfile,
+                  value: profile.publicProfile,
                   activeTrackColor: AppColors.signal,
-                  onChanged: ProfileStore.instance.setPublicProfile,
+                  onChanged: context.read<ProfileCubit>().setPublicProfile,
                 ),
               ),
               const HairRule(),
@@ -325,6 +327,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
         );
       },
+      ),
     );
   }
 }

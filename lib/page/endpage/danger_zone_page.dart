@@ -1,37 +1,42 @@
 import 'package:atomic_notes/database/notes_repository.dart';
+import 'package:atomic_notes/database/notes_source.dart';
+import 'package:atomic_notes/state/danger_zone/danger_zone_cubit.dart';
 import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/my_appbar.dart';
 import 'package:atomic_notes/utility/component/my_snackbar.dart';
 import 'package:atomic_notes/utility/component/slide_confirm_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Danger Zone: the two ways to destroy notes, each behind a slide-to-confirm.
 ///
 /// The two are deliberately independent. Wiping the cloud never touches this
 /// device, and wiping this device never touches the cloud.
-class DangerZonePage extends StatefulWidget {
-  const DangerZonePage({super.key});
+class DangerZonePage extends StatelessWidget {
+  /// [source] is only given by tests; the app uses the real notes store.
+  const DangerZonePage({super.key, this.source});
+
+  final NotesSource? source;
 
   @override
-  State<DangerZonePage> createState() => _DangerZonePageState();
-}
-
-class _DangerZonePageState extends State<DangerZonePage> {
-  final NotesRepository repo = NotesRepository.instance;
-
-  Future<WipeOutcome> _wipeCloud() => repo.wipeRemote();
-
-  Future<WipeOutcome> _wipeLocal() async {
-    final removed = await repo.wipeLocalNotes();
-    return WipeOutcome(
-      true,
-      removed == 1
-          ? 'Removed 1 note from this device. Cloud notes are untouched and download again on the next sync.'
-          : 'Removed $removed notes from this device. Cloud notes are untouched and download again on the next sync.',
+  Widget build(BuildContext context) {
+    return BlocProvider<DangerZoneCubit>(
+      create: (_) =>
+          DangerZoneCubit(source: source ?? NotesRepository.instance),
+      child: const _DangerZoneView(),
     );
   }
+}
 
+class _DangerZoneView extends StatefulWidget {
+  const _DangerZoneView();
+
+  @override
+  State<_DangerZoneView> createState() => _DangerZoneViewState();
+}
+
+class _DangerZoneViewState extends State<_DangerZoneView> {
   void _confirm({
     required String title,
     required String slideLabel,
@@ -66,11 +71,11 @@ class _DangerZonePageState extends State<DangerZonePage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
             AppSpace.md, AppSpace.lg, AppSpace.md, AppSpace.xl),
-        child: AnimatedBuilder(
-          animation: repo,
-          builder: (context, _) {
-            final int onDevice = repo.count;
-            final int unsynced = repo.pendingCount;
+        child: BlocBuilder<DangerZoneCubit, DangerZoneState>(
+          builder: (context, state) {
+            final cubit = context.read<DangerZoneCubit>();
+            final int onDevice = state.onDevice;
+            final int unsynced = state.unsynced;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -106,7 +111,7 @@ class _DangerZonePageState extends State<DangerZonePage> {
                       'To put them back in the cloud later, edit a note or '
                           'use "Upload all" in Cloud Notes.',
                     ],
-                    run: _wipeCloud,
+                    run: cubit.wipeCloud,
                   ),
                 ),
                 const SizedBox(height: AppSpace.md),
@@ -138,7 +143,7 @@ class _DangerZonePageState extends State<DangerZonePage> {
                                 'exist only on this device and will be lost for '
                                 'good.')
                         : null,
-                    run: _wipeLocal,
+                    run: cubit.wipeLocal,
                   ),
                 ),
               ],

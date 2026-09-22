@@ -7,6 +7,7 @@ import 'package:atomic_notes/authentication/auth_services/auth_service.dart';
 import 'package:atomic_notes/database/notes_repository.dart';
 import 'package:atomic_notes/database/sync_status.dart';
 import 'package:atomic_notes/security/vault.dart';
+import 'package:atomic_notes/state/notes/notes_bloc.dart';
 import 'package:atomic_notes/utility/component/logo_container.dart';
 import 'package:atomic_notes/utility/component/logout_dialogbox.dart';
 import 'package:atomic_notes/utility/component/my_snackbar.dart';
@@ -14,6 +15,7 @@ import 'package:atomic_notes/utility/component/profile_container.dart';
 import 'package:atomic_notes/utility/app_info.dart';
 import 'package:atomic_notes/utility/component/settings_card.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_ce/hive_ce.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -166,10 +168,9 @@ class _SettingsPageState extends State<SettingsPage> {
             const SectionHeader('MANAGE'),
 
             const SizedBox(height: AppSpace.md),
-            AnimatedBuilder(
-              animation: repo,
-              builder: (context, _) {
-                final int binned = repo.binNotes.length;
+            BlocSelector<NotesBloc, NotesState, int>(
+              selector: (state) => state.binCount,
+              builder: (context, binned) {
                 return Column(
                   children: [
                     _cardRow(

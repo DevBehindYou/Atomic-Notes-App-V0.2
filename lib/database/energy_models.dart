@@ -5,6 +5,8 @@
 // lives server-side (see supabase/migrations/006_energy.sql); these just carry
 // what the client reads back.
 
+import 'package:equatable/equatable.dart';
+
 /// One kind of ledger entry. String values match the `kind` column check
 /// constraint in Postgres.
 enum EnergyTxKind {
@@ -52,7 +54,7 @@ enum EnergyTxKind {
 }
 
 /// A single balance-changing event, read from `energy_ledger`.
-class EnergyTx {
+class EnergyTx extends Equatable {
   final String id;
   final EnergyTxKind kind;
   final int coinsDelta;
@@ -73,6 +75,18 @@ class EnergyTx {
     required this.createdAt,
   });
 
+  @override
+  List<Object?> get props => [
+        id,
+        kind,
+        coinsDelta,
+        energyDelta,
+        resultingCoins,
+        resultingEnergy,
+        note,
+        createdAt,
+      ];
+
   factory EnergyTx.fromMap(Map<String, dynamic> m) {
     int asInt(dynamic v) => v is int ? v : int.tryParse('${v ?? 0}') ?? 0;
     return EnergyTx(
@@ -90,7 +104,7 @@ class EnergyTx {
 }
 
 /// The current balances, read from the `atomicuser` row.
-class Wallet {
+class Wallet extends Equatable {
   final int coins;
   final int energy;
   final int energyCap;
@@ -106,6 +120,10 @@ class Wallet {
     required this.lastDailyGrantAt,
     this.noteLimit = 20,
   });
+
+  @override
+  List<Object?> get props =>
+      [coins, energy, energyCap, lastDailyGrantAt, noteLimit];
 
   /// Empty wallet used before the first load / for a fresh account.
   static const Wallet empty =
@@ -132,7 +150,7 @@ class Wallet {
 
 /// The prices and ceilings the Server enforces, sent with the wallet so the App
 /// shows what will really happen. The defaults are used until the first load.
-class EnergyLimits {
+class EnergyLimits extends Equatable {
   final int noteLimitFree;
   final int noteLimitStep;
   final int noteLimitCeiling;
@@ -150,6 +168,17 @@ class EnergyLimits {
     this.syncInstantCost = 10,
     this.syncStandardIntervalSeconds = 3600,
   });
+
+  @override
+  List<Object?> get props => [
+        noteLimitFree,
+        noteLimitStep,
+        noteLimitCeiling,
+        noteLimitStepCostCoins,
+        syncStandardCost,
+        syncInstantCost,
+        syncStandardIntervalSeconds,
+      ];
 
   factory EnergyLimits.fromMap(Map<String, dynamic> m) {
     int asInt(String key, int fallback) {

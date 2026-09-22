@@ -1,15 +1,16 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:atomic_notes/database/notification_models.dart';
-import 'package:atomic_notes/database/notification_service.dart';
+import 'package:atomic_notes/state/notifications/notifications_cubit.dart';
 import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/atomic_icon.dart';
 import 'package:atomic_notes/utility/component/my_appbar.dart';
 import 'package:atomic_notes/utility/component/my_snackbar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// In-app Notification Center. Reads [NotificationService]; the admin
+/// In-app Notification Center. Reads [NotificationsCubit]; the admin
 /// (Atomic-Controller) authors the notifications, users only read/act on them.
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -19,7 +20,7 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  final NotificationService service = NotificationService.instance;
+  NotificationsCubit get service => context.read<NotificationsCubit>();
 
   @override
   void initState() {
@@ -47,10 +48,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return Scaffold(
       backgroundColor: AppColors.paper,
       appBar: const MyAppBar(text: "Notifications"),
-      body: AnimatedBuilder(
-        animation: service,
-        builder: (context, _) {
-          if (service.loading && service.items.isEmpty) {
+      body: BlocBuilder<NotificationsCubit, NotificationsState>(
+        builder: (context, state) {
+          if (state.loading && state.items.isEmpty) {
             return const Center(
               child: SizedBox(
                 height: 22,
@@ -69,7 +69,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               children: [
                 SectionHeader(
                   'INBOX',
-                  trailing: service.unreadCount == 0
+                  trailing: state.unreadCount == 0
                       ? null
                       : GestureDetector(
                           onTap: service.markAllRead,
@@ -79,12 +79,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         ),
                 ),
                 const SizedBox(height: AppSpace.md),
-                if (service.error != null)
+                if (state.error != null)
                   _note('Could not load notifications. Pull down to retry.')
-                else if (service.items.isEmpty)
+                else if (state.items.isEmpty)
                   _note("You're all caught up. Nothing new right now.")
                 else
-                  ...service.items.map(_card),
+                  ...state.items.map(_card),
               ],
             ),
           );

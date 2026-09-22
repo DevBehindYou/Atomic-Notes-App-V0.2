@@ -1,9 +1,11 @@
 import 'package:atomic_notes/database/energy_service.dart';
+import 'package:atomic_notes/state/energy/energy_cubit.dart';
 import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/atomic_icon.dart';
 import 'package:atomic_notes/utility/component/energy_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Compact Atomic Energy / Coins popup shown on a long-press of the Sync
 /// button. Anchored near the top-right (where the button lives), scales in from
@@ -33,24 +35,23 @@ Future<void> showEnergyPopup(BuildContext context) {
   );
 }
 
-class _EnergyPopup extends StatefulWidget {
+class _EnergyPopup extends StatelessWidget {
   const _EnergyPopup();
 
   @override
-  State<_EnergyPopup> createState() => _EnergyPopupState();
+  Widget build(BuildContext context) {
+    return BlocProvider<EnergyCubit>(
+      // Freshen quietly when opened; the popup renders cached values immediately.
+      create: (_) => EnergyCubit(store: EnergyService.instance)..refresh(),
+      child: const _EnergyPopupView(),
+    );
+  }
 }
 
-class _EnergyPopupState extends State<_EnergyPopup> {
-  final EnergyService energy = EnergyService.instance;
+class _EnergyPopupView extends StatelessWidget {
+  const _EnergyPopupView();
 
-  @override
-  void initState() {
-    super.initState();
-    // Freshen quietly when opened; the popup renders cached values immediately.
-    energy.refresh();
-  }
-
-  void _openPage() {
+  void _openPage(BuildContext context) {
     Navigator.of(context).pop(); // close popup first
     Navigator.of(context).pushNamed('/energypage');
   }
@@ -71,9 +72,8 @@ class _EnergyPopupState extends State<_EnergyPopup> {
               top: kToolbarHeight + AppSpace.sm, right: AppSpace.md),
           child: SizedBox(
             width: width,
-            child: AnimatedBuilder(
-              animation: energy,
-              builder: (context, _) => EditorialModule(
+            child: BlocBuilder<EnergyCubit, EnergyState>(
+              builder: (context, energy) => EditorialModule(
                 fill: AppColors.paper,
                 padding: const EdgeInsets.all(AppSpace.md),
                 child: Column(
@@ -83,7 +83,7 @@ class _EnergyPopupState extends State<_EnergyPopup> {
                     // Row 1 — Atomic Energy
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: _openPage,
+                      onTap: () => _openPage(context),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -116,7 +116,7 @@ class _EnergyPopupState extends State<_EnergyPopup> {
                     // Row 2 — Atomic Coins
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: _openPage,
+                      onTap: () => _openPage(context),
                       child: Row(
                         children: [
                           const AtomicIcon.coin(size: 22),
@@ -134,7 +134,7 @@ class _EnergyPopupState extends State<_EnergyPopup> {
                     const SizedBox(height: AppSpace.sm),
                     Align(
                       alignment: Alignment.centerRight,
-                      child: ArrowLink('Open energy', onTap: _openPage),
+                      child: ArrowLink('Open energy', onTap: () => _openPage(context)),
                     ),
                   ],
                 ),

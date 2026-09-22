@@ -1,5 +1,8 @@
 import 'package:atomic_notes/database/note.dart';
 import 'package:atomic_notes/database/notes_repository.dart';
+import 'package:atomic_notes/database/notes_source.dart';
+import 'package:atomic_notes/state/recycle_bin/recycle_bin_cubit.dart';
+import 'package:atomic_notes/state/ui_message.dart';
 import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/logout_dialogbox.dart';
@@ -7,54 +10,56 @@ import 'package:atomic_notes/utility/component/my_appbar.dart';
 import 'package:atomic_notes/utility/component/my_snackbar.dart';
 import 'package:atomic_notes/utility/component/slide_confirm_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Recycle Bin: notes that were deleted on a device, waiting to be restored or
 /// removed for good.
 ///
 /// Deleting a note never destroys it at once. Its content stays here, and its
 /// cloud file sits in the Google Drive trash, until it is deleted forever.
-class RecycleBinPage extends StatefulWidget {
-  const RecycleBinPage({super.key});
+class RecycleBinPage extends StatelessWidget {
+  /// [source] is only given by tests; the app uses the real notes store.
+  const RecycleBinPage({super.key, this.source});
+
+  final NotesSource? source;
 
   @override
-  State<RecycleBinPage> createState() => _RecycleBinPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider<RecycleBinCubit>(
+      create: (_) =>
+          RecycleBinCubit(source: source ?? NotesRepository.instance),
+      child: const _RecycleBinView(),
+    );
+  }
 }
 
-class _RecycleBinPageState extends State<RecycleBinPage> {
-  final NotesRepository repo = NotesRepository.instance;
+class _RecycleBinView extends StatefulWidget {
+  const _RecycleBinView();
 
+  @override
+  State<_RecycleBinView> createState() => _RecycleBinViewState();
+}
+
+class _RecycleBinViewState extends State<_RecycleBinView> {
   static String _stamp(DateTime d) {
     final l = d.toLocal();
     String p(int v) => v.toString().padLeft(2, '0');
     return '${l.year}-${p(l.month)}-${p(l.day)} ${p(l.hour)}:${p(l.minute)}';
   }
 
-  Future<void> _restore(Note note) async {
-    if (repo.isAtLimit) {
-      MySnackBar(
-        text: 'Note limit reached (${repo.limit}). Delete a note to make room.',
-        sec: 3000,
+  void _show(UiMessage message) => MySnackBar(
+        text: message.text,
+        sec: message.millis,
       ).showMySnackBar(context);
-      return;
-    }
-    final bool ok = await repo.restoreNote(note.id);
-    if (!mounted) return;
-    MySnackBar(
-      text: ok ? 'Note restored' : 'Could not restore this note',
-      sec: 2000,
-    ).showMySnackBar(context);
-  }
 
-  /// Why a delete could not go through: a deletion must reach the cloud first, or the note would come back.
-  String _notSentYet() {
-    final next = repo.nextAutoSyncAt;
-    if (next == null) return 'Could not delete yet. Turn on Cloud Sync and sync first.';
-    final int minutes = (next.difference(DateTime.now()).inSeconds / 60).ceil().clamp(1, 60);
-    return 'This deletion has not reached the cloud yet. It sends in $minutes min, '
-        'or use Sync now in Cloud Notes.';
+  Future<void> _restore(Note note) async {
+    final message = await context.read<RecycleBinCubit>().restore(note);
+    if (!mounted) return;
+    _show(message);
   }
 
   void _deleteForever(Note note) {
+    final cubit = context.read<RecycleBinCubit>();
     final String name = note.title.trim().isEmpty ? 'this note' : '"${note.title.trim()}"';
     showDialog<void>(
       context: context,
@@ -64,20 +69,16 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
             'Its cloud copy stays in your Google Drive trash until Drive '
             'empties it.',
         action: () async {
-          final int removed = await repo.deleteForever([note.id]);
+          final message = await cubit.deleteForever(note);
           if (!mounted) return;
-          MySnackBar(
-            text: removed > 0
-                ? 'Deleted for good'
-                : _notSentYet(),
-            sec: 3000,
-          ).showMySnackBar(context);
+          _show(message);
         },
       ),
     );
   }
 
   void _emptyBin(int count) {
+    final cubit = context.read<RecycleBinCubit>();
     showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -92,17 +93,9 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
               'empties it.',
         ],
         onConfirmed: () async {
-          final int removed =
-              await repo.deleteForever(repo.binNotes.map((n) => n.id).toList());
+          final message = await cubit.emptyBin();
           if (dialogContext.mounted) Navigator.pop(dialogContext);
-          if (mounted) {
-            MySnackBar(
-              text: removed > 0
-                  ? 'Recycle Bin emptied'
-                  : _notSentYet(),
-              sec: 3000,
-            ).showMySnackBar(context);
-          }
+          if (mounted) _show(message);
         },
       ),
     );
@@ -116,10 +109,9 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
             AppSpace.md, AppSpace.lg, AppSpace.md, AppSpace.xl),
-        child: AnimatedBuilder(
-          animation: repo,
-          builder: (context, _) {
-            final List<Note> items = repo.binNotes;
+        child: BlocBuilder<RecycleBinCubit, RecycleBinState>(
+          builder: (context, state) {
+            final List<Note> items = state.notes;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

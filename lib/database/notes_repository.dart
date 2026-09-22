@@ -5,6 +5,7 @@ import 'package:atomic_notes/api/atomic_notes_api.dart';
 import 'package:atomic_notes/database/energy_service.dart';
 import 'package:atomic_notes/database/note.dart';
 import 'package:atomic_notes/database/note_quota.dart';
+import 'package:atomic_notes/database/notes_source.dart';
 import 'package:atomic_notes/database/sync_status.dart';
 import 'package:atomic_notes/security/vault.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -29,7 +30,7 @@ import 'package:hive_ce/hive_ce.dart';
 /// manual sync — a real UX regression from before, not a simplification, and
 /// worth restoring deliberately (websocket push, or at least shorter polling)
 /// rather than treating this comment as still accurate.
-class NotesRepository extends ChangeNotifier {
+class NotesRepository extends ChangeNotifier implements NotesSource {
   NotesRepository._() {
     // The note limit comes from the Server's wallet; the notes screens show it, so they must hear when it moves.
     NoteQuota.changes.addListener(notifyListeners);
@@ -58,7 +59,9 @@ class NotesRepository extends ChangeNotifier {
   bool _syncing = false;
   bool get isSyncing => _syncing;
 
+  @override
   String? lastError;
+  @override
   DateTime? lastSyncedAt;
   int? _syncCursor;
   static const _pendingPushKey = '__pending_sync_operation';
@@ -82,6 +85,7 @@ class NotesRepository extends ChangeNotifier {
   Timer? _autoRetry;
 
   /// When the next automatic sync can send changes, or null when it is open now.
+  @override
   DateTime? get nextAutoSyncAt {
     final until = _standardBlockedUntil;
     return until != null && until.isAfter(DateTime.now()) ? until : null;
@@ -244,6 +248,7 @@ class NotesRepository extends ChangeNotifier {
   // ---- reads ------------------------------------------------------------
 
   /// Live notes, tombstones excluded, pinned first.
+  @override
   List<Note> visible({NoteFilter filter = NoteFilter.newest}) {
     final list = _notes.values.where((n) => !n.deleted).toList();
 
@@ -266,14 +271,18 @@ class NotesRepository extends ChangeNotifier {
     return list;
   }
 
+  @override
   int get count => _notes.values.where((n) => !n.deleted).length;
+  @override
   int get pendingCount => _notes.values.where((n) => n.dirty).length;
 
+  @override
   Note? byId(String id) => _notes[id];
 
   // ---- quota ------------------------------------------------------------
 
   /// Notes and to-dos share one allowance — a checklist is a note.
+  @override
   int get limit => NoteQuota.limit;
 
   int get remaining => (limit - count).clamp(0, limit);
@@ -285,6 +294,7 @@ class NotesRepository extends ChangeNotifier {
 
   // ---- writes -----------------------------------------------------------
 
+  @override
   Future<void> save(Note note) async {
     note.touch();
     // Saved without a real change (or edited back to what the cloud holds): nothing to upload.
@@ -297,6 +307,7 @@ class NotesRepository extends ChangeNotifier {
   }
 
   /// Soft delete, so the removal can reach other devices.
+  @override
   Future<void> deleteNotes(Iterable<String> ids) async {
     for (final id in ids) {
       final n = _notes[id];
@@ -374,6 +385,7 @@ class NotesRepository extends ChangeNotifier {
   /// cover the upload, the notes stay safely on the device (still dirty) and
   /// nothing is pushed — so at zero energy local notes keep working but don't
   /// reach the cloud until energy is topped up.
+  @override
   Future<bool> syncNow({bool instant = false}) async {
     if (_syncing) return true;
     final uid = _userId;
@@ -427,7 +439,20 @@ class NotesRepository extends ChangeNotifier {
       return false;
     } finally {
       _syncing = false;
+      final done = _syncDone;
+      _syncDone = null;
+      done?.complete();
       notifyListeners();
+    }
+  }
+
+  /// Completes when the running sync ends. Lets a caller that must not race a
+  /// sync (unlock, migration) wait for it instead of skipping it.
+  Completer<void>? _syncDone;
+
+  Future<void> _whenIdle() async {
+    while (_syncing) {
+      await (_syncDone ??= Completer<void>()).future;
     }
   }
 
@@ -605,12 +630,15 @@ class NotesRepository extends ChangeNotifier {
     var changed = false;
     for (final row in rows) {
       if (_userId != forUid) return; // session ended mid-merge
+      // Read before the row is opened: is the cloud copy plain while the vault is unlocked?
+      final plainInCloud = rowNeedsSealing(row, vaultUnlocked: Vault.instance.isUnlocked);
       final opened = await _open(row);
       if (opened == null) continue; // encrypted + locked: retry after unlock
       final remote = Note.fromRemote(opened);
       final local = _notes[remote.id];
 
       if (local == null) {
+        if (plainInCloud) remote.requireResend();
         _notes[remote.id] = remote;
         await _persist(remote.id);
         changed = true;
@@ -621,8 +649,14 @@ class NotesRepository extends ChangeNotifier {
       if (local.dirty) continue;
 
       if (remote.serverVersion > local.serverVersion) {
+        if (plainInCloud) remote.requireResend();
         _notes[remote.id] = remote;
         await _persist(remote.id);
+        changed = true;
+      } else if (plainInCloud && remote.serverVersion == local.serverVersion) {
+        // This device already has that version, but the cloud still holds it as plain text.
+        local.requireResend();
+        await _persist(local.id);
         changed = true;
       }
     }
@@ -635,25 +669,36 @@ class NotesRepository extends ChangeNotifier {
   /// while the vault was off or locked (T2T) are converted to vault notes. It
   /// is idempotent: re-sealing an already-sealed note just rewrites it, so an
   /// interrupted run is safe to repeat.
-  Future<void> migrateToVault() async {
-    if (!Vault.instance.isUnlocked) return;
-    if (_notes.isEmpty) return;
+  ///
+  /// Waits for a sync that is already running first: it may still be pulling notes
+  /// this method has not seen yet, and skipping it (as a busy [syncNow] does) would
+  /// leave those notes plain in the cloud. Returns how many notes are still waiting
+  /// to be sent sealed (0 when the migration finished; more when the Server refused
+  /// for now, for example without enough energy).
+  Future<int> migrateToVault() async {
+    if (!Vault.instance.isUnlocked) return 0;
+    await _whenIdle();
+    if (_notes.isEmpty) return 0;
     debugPrint('NotesRepository: migrating ${_notes.length} notes into the vault');
     for (final n in _notes.values.toList()) {
-      n.dirty = true;
-      // The content is the same but its stored form changes, so it must be sent again.
-      n.syncedSig = '';
+      n.requireResend();
       await _persist(n.id);
     }
     notifyListeners();
     await syncNow();
-    debugPrint('NotesRepository: vault migration complete');
+    final waiting = pendingCount;
+    debugPrint('NotesRepository: vault migration ${waiting == 0 ? 'complete' : 'left $waiting notes waiting'}');
+    return waiting;
   }
 
   /// After unlocking on a device that was holding notes it could not read,
   /// re-read the local cache, pull everything, and fold any plaintext notes
   /// into the vault.
   Future<void> reloadAfterUnlock() async {
+    // A sync that started before the unlock may still be merging rows. Let it finish, so the
+    // reload below sees every row it stored and its late rows are not merged into a cache that
+    // is being rebuilt.
+    await _whenIdle();
     await _loadFromDisk();
     // A locked pull skipped encrypted rows but still advanced the cursor.
     await _resetCursor();
@@ -682,6 +727,7 @@ class NotesRepository extends ChangeNotifier {
   ///
   /// A deleted note is a tombstone that keeps its content, so it can be put
   /// back. Its cloud file sits in the Google Drive trash meanwhile.
+  @override
   List<Note> get binNotes {
     final list = _notes.values.where((n) => n.deleted).toList();
     list.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
@@ -690,6 +736,7 @@ class NotesRepository extends ChangeNotifier {
 
   /// Puts a deleted note back. False when it is not in the bin or the note
   /// limit leaves no room for it.
+  @override
   Future<bool> restoreNote(String id) async {
     final n = _notes[id];
     if (n == null || !n.deleted || isAtLimit) return false;
@@ -706,6 +753,7 @@ class NotesRepository extends ChangeNotifier {
   /// reached the cloud yet is synced first: forgetting it locally would let the
   /// note come back from the cloud on the next pull. Returns how many were
   /// removed; 0 means nothing was, for example because that sync failed.
+  @override
   Future<int> deleteForever(Iterable<String> ids) async {
     final targets = ids.where((id) => _notes[id]?.deleted == true).toList();
     if (targets.isEmpty) return 0;
@@ -739,6 +787,7 @@ class NotesRepository extends ChangeNotifier {
   /// never change the notes on this device. It counts rows, not readable notes:
   /// an encrypted row still counts while this device is locked, which is what
   /// makes the on-device and in-cloud numbers comparable.
+  @override
   Future<int?> cloudCount() async {
     if (_userId == null) return null;
     try {
@@ -758,6 +807,7 @@ class NotesRepository extends ChangeNotifier {
   ///
   /// Deliberately leaves the vault row alone: it holds the phrase verifier, and
   /// dropping it would strand notes still encrypted on other devices.
+  @override
   Future<WipeOutcome> wipeRemote() async {
     if (_userId == null) return const WipeOutcome(false, 'Not signed in.');
     try {
@@ -784,6 +834,7 @@ class NotesRepository extends ChangeNotifier {
   /// Removes every note from THIS DEVICE only. The cloud copy is not touched, so
   /// the notes download again on the next sync. Notes that were never uploaded
   /// are gone for good: [pendingCount] says how many before the caller asks.
+  @override
   Future<int> wipeLocalNotes() async {
     final removed = _notes.length;
     _notes.clear();
@@ -801,6 +852,7 @@ class NotesRepository extends ChangeNotifier {
 
   /// Marks every live note as waiting to upload, so the next sync writes all of
   /// them to the cloud. Used to refill a cloud that was wiped.
+  @override
   Future<int> markAllForUpload() async {
     var marked = 0;
     for (final n in _notes.values.toList()) {
@@ -814,11 +866,4 @@ class NotesRepository extends ChangeNotifier {
     notifyListeners();
     return marked;
   }
-}
-
-/// Result of a wipe: whether it happened, and what to tell the user.
-class WipeOutcome {
-  final bool ok;
-  final String message;
-  const WipeOutcome(this.ok, this.message);
 }

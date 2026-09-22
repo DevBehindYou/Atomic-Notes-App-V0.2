@@ -1,294 +1,245 @@
-// ignore_for_file: use_super_parameters, library_private_types_in_public_api
-
 import 'package:atomic_notes/database/note.dart';
-import 'package:atomic_notes/database/notes_repository.dart';
 import 'package:atomic_notes/page/notes_editor_page.dart';
+import 'package:atomic_notes/state/notes/notes_bloc.dart';
 import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/my_snackbar.dart';
 import 'package:atomic_notes/utility/component/note_skeliton.dart';
 import 'package:atomic_notes/utility/component/notes_builder.dart';
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
+/// The notes screen. What it shows lives in [NotesBloc]; this file only draws it. Each part
+/// (title row, filter chips, search box, grid, add menu) listens to just the fields it shows,
+/// so a tick on one card does not rebuild the header and typing in the search box does not
+/// rebuild the add menu.
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
-  _HomePageState createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  final NotesRepository repo = NotesRepository.instance;
   final ScrollController _controller = ScrollController();
-
-  NoteFilter _filter = NoteFilter.newest;
 
   /// Live text search over the current account's notes (title, body, checklist
   /// items). Runs entirely in memory on the already-decrypted notes, so it never
   /// touches the network and works offline.
   final TextEditingController _searchCtrl = TextEditingController();
-  String _query = '';
 
-  /// Ids picked in multi-select mode. Empty means normal browsing.
-  final Set<String> _selected = {};
-  bool get _selecting => _selected.isNotEmpty;
+  late final Widget _body;
 
   @override
   void initState() {
     super.initState();
-    repo.addListener(_onRepoChanged);
+    // A screen opened afresh starts with the newest filter, an empty search and nothing selected.
+    context.read<NotesBloc>().add(const NotesViewReset());
+    // Built once: the parts below listen to the bloc themselves, so the tree does not have to be
+    // rebuilt when the selection starts or ends.
+    _body = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _Header(searchController: _searchCtrl),
+        Expanded(child: _NotesGrid(controller: _controller)),
+      ],
+    );
   }
 
   @override
   void dispose() {
-    repo.removeListener(_onRepoChanged);
     _controller.dispose();
     _searchCtrl.dispose();
     super.dispose();
   }
 
-  void _onRepoChanged() {
-    if (!mounted) return;
-    setState(() {
-      // Drop selections for notes that vanished under us (deleted on another
-      // device, or pulled in as a tombstone).
-      _selected.removeWhere((id) => repo.byId(id)?.deleted ?? true);
-    });
-  }
-
-  // ---- actions ----------------------------------------------------------
-
-  void _openEditor(Note note, {required bool isNew}) async {
-    final saved = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => NotesCreaterPage(note: note),
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<NotesBloc, NotesState>(
+      listenWhen: (previous, current) =>
+          previous.notice != current.notice &&
+          current.notice != null &&
+          !current.notice!.fromSync,
+      listener: (context, state) => MySnackBar(
+        text: state.notice!.text,
+        sec: state.notice!.millis,
+      ).showMySnackBar(context),
+      child: BlocSelector<NotesBloc, NotesState, bool>(
+        selector: (state) => state.selecting,
+        builder: (context, selecting) => Scaffold(
+          backgroundColor: AppColors.paper,
+          body: _body,
+          floatingActionButton: selecting ? null : const _AddMenu(),
+        ),
+      ),
     );
-    if (saved == true) {
-      if (note.isEmpty) {
-        if (!mounted) return;
-        const MySnackBar(text: "Empty note discarded", sec: 1200)
-            .showMySnackBar(context);
-        return;
-      }
-      await repo.save(note);
-    } else if (isNew) {
-      // Nothing to do — an abandoned new note was never stored.
-    }
   }
+}
 
-  void _newNote(NoteKind kind) {
-    // Notes and to-dos draw on the same allowance.
-    if (repo.isAtLimit) {
-      MySnackBar(
-        text: "You've reached ${repo.limit} notes — delete one to make room",
-        sec: 3000,
-      ).showMySnackBar(context);
-      return;
-    }
-    _openEditor(Note.create(kind: kind), isNew: true);
-  }
+// ---- header ---------------------------------------------------------------
 
-  void _toggleSelect(String id) {
-    setState(() {
-      if (!_selected.remove(id)) _selected.add(id);
-    });
-  }
+class _Header extends StatelessWidget {
+  const _Header({required this.searchController});
 
-  Future<void> _deleteSelected() async {
-    final n = _selected.length;
-    await repo.deleteNotes(_selected.toList());
-    if (!mounted) return;
-    setState(_selected.clear);
-    MySnackBar(
-      text: n == 1
-          ? "Note moved to the Recycle Bin"
-          : "$n notes moved to the Recycle Bin",
-      sec: 1500,
-    ).showMySnackBar(context);
-  }
-
-  void _selectAll(List<Note> shown) {
-    setState(() {
-      if (_selected.length == shown.length) {
-        _selected.clear();
-      } else {
-        _selected
-          ..clear()
-          ..addAll(shown.map((n) => n.id));
-      }
-    });
-  }
-
-  int _responsiveColumnCount(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    if (width >= 1100) return 5;
-    if (width >= 800) return 4;
-    if (width >= 550) return 3;
-    return 2;
-  }
-
-  // ---- build ------------------------------------------------------------
+  final TextEditingController searchController;
 
   @override
   Widget build(BuildContext context) {
-    final all = repo.visible(filter: _filter);
-    final q = _query.trim().toLowerCase();
-    final notes = q.isEmpty
-        ? all
-        : all
-            .where((n) =>
-                n.title.toLowerCase().contains(q) ||
-                n.body.toLowerCase().contains(q) ||
-                n.items.any((it) => it.text.toLowerCase().contains(q)))
-            .toList();
-
-    return Scaffold(
-      backgroundColor: AppColors.paper,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _header(notes),
-          Expanded(
-            child: notes.isEmpty
-                ? _emptyState()
-                : Scrollbar(
-                    radius: AppRadius.smRadius,
-                    thickness: 4,
-                    controller: _controller,
-                    child: MasonryGridView.count(
-                      padding: const EdgeInsets.fromLTRB(
-                          AppSpace.md, AppSpace.sm, AppSpace.md, 110),
-                      crossAxisCount: _responsiveColumnCount(context),
-                      mainAxisSpacing: AppSpace.sm,
-                      crossAxisSpacing: AppSpace.sm,
-                      controller: _controller,
-                      itemCount: notes.length,
-                      itemBuilder: (context, index) {
-                        final note = notes[index];
-                        return NotesBulder(
-                          key: ValueKey(note.id),
-                          note: note,
-                          selected: _selected.contains(note.id),
-                          selectionMode: _selecting,
-                          onTap: () => _selecting
-                              ? _toggleSelect(note.id)
-                              : _openEditor(note, isNew: false),
-                          onLongPress: () => _toggleSelect(note.id),
-                          onToggleItem: (i) async {
-                            note.items[i].done = !note.items[i].done;
-                            await repo.save(note);
-                          },
-                        );
-                      },
-                    ),
-                  ),
-          ),
-        ],
-      ),
-      floatingActionButton: _selecting ? null : _addMenu(),
-    );
-  }
-
-  Widget _header(List<Note> notes) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
           AppSpace.md, AppSpace.md, AppSpace.md, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: EditorialHeading(
-                  _selecting ? '${_selected.length} selected' : 'Notes',
-                  style: AppType.headlineLg,
-                  maxLines: 1,
-                ),
-              ),
-              if (_selecting) ...[
-                GestureDetector(
-                  onTap: () => _selectAll(notes),
-                  behavior: HitTestBehavior.opaque,
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: AppSpace.sm),
-                    child: MonoLabel('ALL'),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => setState(_selected.clear),
-                  behavior: HitTestBehavior.opaque,
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: AppSpace.sm),
-                    child: MonoLabel('CANCEL'),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: _deleteSelected,
-                  behavior: HitTestBehavior.opaque,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpace.sm + 2, vertical: 6),
-                    decoration: const BoxDecoration(
-                      color: AppColors.error,
-                      borderRadius: AppRadius.std,
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.delete_outline,
-                            size: 14, color: Colors.white),
-                        SizedBox(width: 4),
-                        MonoLabel('DELETE', color: Colors.white),
-                      ],
-                    ),
-                  ),
-                ),
-              ] else
-                // Usage is shown always, not just when it's a problem, so
-                // running out is never a surprise.
-                MonoLabel(
-                  '${repo.usageLabel}'
-                  '${repo.pendingCount > 0 ? " · ${repo.pendingCount} UNSYNCED" : ""}',
-                  color: repo.isAtLimit
-                      ? AppColors.error
-                      : (repo.remaining <= 5 ? AppColors.signal : null),
-                ),
-            ],
-          ),
+          const _TitleRow(),
           const SizedBox(height: AppSpace.sm),
           const HairRule(color: AppColors.ink),
-          if (!_selecting) ...[
-            const SizedBox(height: AppSpace.sm),
-            // Filter / sort row.
-            SizedBox(
-              height: 28,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: NoteFilter.values.length,
-                separatorBuilder: (_, __) => const SizedBox(width: AppSpace.xs + 2),
-                itemBuilder: (context, i) {
-                  final f = NoteFilter.values[i];
-                  return GestureDetector(
-                    onTap: () => setState(() => _filter = f),
-                    behavior: HitTestBehavior.opaque,
-                    child: DataChip(f.label, active: _filter == f),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: AppSpace.sm),
-            _searchField(),
-          ],
+          _FilterAndSearch(searchController: searchController),
         ],
       ),
     );
   }
+}
 
-  /// Live search field under the filter chips.
-  Widget _searchField() {
+class _TitleRow extends StatelessWidget {
+  const _TitleRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<NotesBloc, NotesState>(
+      buildWhen: (previous, current) =>
+          previous.selected.length != current.selected.length ||
+          previous.count != current.count ||
+          previous.limit != current.limit ||
+          previous.pending != current.pending,
+      builder: (context, state) {
+        final bloc = context.read<NotesBloc>();
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: EditorialHeading(
+                state.selecting ? '${state.selected.length} selected' : 'Notes',
+                style: AppType.headlineLg,
+                maxLines: 1,
+              ),
+            ),
+            if (state.selecting) ...[
+              GestureDetector(
+                onTap: () => bloc.add(const NoteSelectionAllToggled()),
+                behavior: HitTestBehavior.opaque,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: AppSpace.sm),
+                  child: MonoLabel('ALL'),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => bloc.add(const NoteSelectionCleared()),
+                behavior: HitTestBehavior.opaque,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: AppSpace.sm),
+                  child: MonoLabel('CANCEL'),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => bloc.add(const NotesDeleteSelected()),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpace.sm + 2, vertical: 6),
+                  decoration: const BoxDecoration(
+                    color: AppColors.error,
+                    borderRadius: AppRadius.std,
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.delete_outline, size: 14, color: Colors.white),
+                      SizedBox(width: 4),
+                      MonoLabel('DELETE', color: Colors.white),
+                    ],
+                  ),
+                ),
+              ),
+            ] else
+              // Usage is shown always, not just when it's a problem, so
+              // running out is never a surprise.
+              MonoLabel(
+                '${state.usageLabel}'
+                '${state.pending > 0 ? " · ${state.pending} UNSYNCED" : ""}',
+                color: state.isAtLimit
+                    ? AppColors.error
+                    : (state.remaining <= 5 ? AppColors.signal : null),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// The filter chips and the search box, hidden while notes are being selected.
+class _FilterAndSearch extends StatelessWidget {
+  const _FilterAndSearch({required this.searchController});
+
+  final TextEditingController searchController;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<NotesBloc, NotesState, bool>(
+      selector: (state) => state.selecting,
+      builder: (context, selecting) {
+        if (selecting) return const SizedBox.shrink();
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: AppSpace.sm),
+            // Filter / sort row.
+            const SizedBox(height: 28, child: _FilterChips()),
+            const SizedBox(height: AppSpace.sm),
+            _SearchField(controller: searchController),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _FilterChips extends StatelessWidget {
+  const _FilterChips();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<NotesBloc, NotesState, NoteFilter>(
+      selector: (state) => state.filter,
+      builder: (context, current) => ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: NoteFilter.values.length,
+        separatorBuilder: (_, __) => const SizedBox(width: AppSpace.xs + 2),
+        itemBuilder: (context, i) {
+          final f = NoteFilter.values[i];
+          return GestureDetector(
+            onTap: () => context.read<NotesBloc>().add(NotesFilterChanged(f)),
+            behavior: HitTestBehavior.opaque,
+            child: DataChip(f.label, active: current == f),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Live search field under the filter chips.
+class _SearchField extends StatelessWidget {
+  const _SearchField({required this.controller});
+
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
         border: Border(
@@ -302,8 +253,9 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(width: AppSpace.sm),
           Expanded(
             child: TextField(
-              controller: _searchCtrl,
-              onChanged: (v) => setState(() => _query = v),
+              controller: controller,
+              onChanged: (v) =>
+                  context.read<NotesBloc>().add(NotesQueryChanged(v)),
               cursorColor: AppColors.signal,
               style: AppType.bodyMd,
               textInputAction: TextInputAction.search,
@@ -315,108 +267,127 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          if (_query.isNotEmpty)
-            GestureDetector(
-              onTap: () {
-                _searchCtrl.clear();
-                setState(() => _query = '');
-              },
-              behavior: HitTestBehavior.opaque,
-              child: const Padding(
-                padding: EdgeInsets.all(4),
-                child: Icon(Icons.close, size: 16, color: AppColors.slateData),
-              ),
-            ),
+          BlocSelector<NotesBloc, NotesState, bool>(
+            selector: (state) => state.query.isNotEmpty,
+            builder: (context, hasQuery) => hasQuery
+                ? GestureDetector(
+                    onTap: () {
+                      controller.clear();
+                      context.read<NotesBloc>().add(const NotesQueryChanged(''));
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child:
+                          Icon(Icons.close, size: 16, color: AppColors.slateData),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
   }
+}
 
-  /// Two-way add: a plain note or a checklist. Both dim at the cap.
-  Widget _addMenu() {
-    final full = repo.isAtLimit;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        if (full)
-          Container(
-            margin: const EdgeInsets.only(bottom: AppSpace.sm),
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSpace.sm + 2, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.errorContainer,
-              borderRadius: AppRadius.std,
-              border: Border.all(color: AppColors.error, width: AppStroke.rule),
-            ),
-            child: MonoLabel('${repo.limit} NOTE LIMIT REACHED',
-                color: AppColors.onErrorContainer),
+// ---- the grid ---------------------------------------------------------------
+
+int _responsiveColumnCount(BuildContext context) {
+  final width = MediaQuery.sizeOf(context).width;
+  if (width >= 1100) return 5;
+  if (width >= 800) return 4;
+  if (width >= 550) return 3;
+  return 2;
+}
+
+Future<void> _openEditor(BuildContext context, Note note) async {
+  final bloc = context.read<NotesBloc>();
+  final saved = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => NotesCreaterPage(note: note),
+  );
+  if (saved != true) return; // An abandoned new note was never stored.
+  if (note.isEmpty) {
+    if (!context.mounted) return;
+    const MySnackBar(text: "Empty note discarded", sec: 1200)
+        .showMySnackBar(context);
+    return;
+  }
+  bloc.add(NoteSaved(note));
+}
+
+void _newNote(BuildContext context, NoteKind kind) {
+  // Notes and to-dos draw on the same allowance.
+  final state = context.read<NotesBloc>().state;
+  if (state.isAtLimit) {
+    MySnackBar(
+      text: "You've reached ${state.limit} notes — delete one to make room",
+      sec: 3000,
+    ).showMySnackBar(context);
+    return;
+  }
+  _openEditor(context, Note.create(kind: kind));
+}
+
+class _NotesGrid extends StatelessWidget {
+  const _NotesGrid({required this.controller});
+
+  final ScrollController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<NotesBloc, NotesState>(
+      // Not the sync spinner, the notices or the counts: the cards show none of them.
+      buildWhen: (previous, current) =>
+          previous.signature != current.signature ||
+          !setEquals(previous.selected, current.selected) ||
+          previous.filter != current.filter ||
+          previous.query != current.query,
+      builder: (context, state) {
+        final notes = state.notes;
+        if (notes.isEmpty) return _EmptyState(narrowed: state.narrowed);
+        final bloc = context.read<NotesBloc>();
+        return Scrollbar(
+          radius: AppRadius.smRadius,
+          thickness: 4,
+          controller: controller,
+          child: MasonryGridView.count(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpace.md, AppSpace.sm, AppSpace.md, 110),
+            crossAxisCount: _responsiveColumnCount(context),
+            mainAxisSpacing: AppSpace.sm,
+            crossAxisSpacing: AppSpace.sm,
+            controller: controller,
+            itemCount: notes.length,
+            itemBuilder: (context, index) {
+              final note = notes[index];
+              return NotesBulder(
+                key: ValueKey(note.id),
+                note: note,
+                selected: state.selected.contains(note.id),
+                selectionMode: state.selecting,
+                onTap: () => state.selecting
+                    ? bloc.add(NoteSelectionToggled(note.id))
+                    : _openEditor(context, note),
+                onLongPress: () => bloc.add(NoteSelectionToggled(note.id)),
+                onToggleItem: (i) => bloc.add(NoteItemToggled(note, i)),
+              );
+            },
           ),
-        GestureDetector(
-          onTap: () => _newNote(NoteKind.todo),
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSpace.md, vertical: AppSpace.sm + 2),
-            decoration: BoxDecoration(
-              color: AppColors.paper,
-              borderRadius: AppRadius.std,
-              border:
-                  Border.all(color: AppColors.ink, width: AppStroke.hairline),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.checklist_rounded, size: 16, color: AppColors.ink),
-                SizedBox(width: AppSpace.sm),
-                MonoLabel('CHECKLIST', color: AppColors.ink),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpace.sm),
-        GestureDetector(
-          onTap: () => _newNote(NoteKind.text),
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            decoration: const BoxDecoration(
-              borderRadius: AppRadius.std,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.ink,
-                  offset: Offset(AppStroke.offset, AppStroke.offset),
-                  blurRadius: 0,
-                ),
-              ],
-            ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpace.md + 2, vertical: AppSpace.md - 2),
-              decoration: BoxDecoration(
-                color: AppColors.ink,
-                borderRadius: AppRadius.std,
-                border: Border.all(
-                    color: AppColors.ink, width: AppStroke.hairline),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add, size: 18, color: AppColors.paper),
-                  SizedBox(width: AppSpace.sm),
-                  MonoLabel('NEW NOTE', color: AppColors.paper),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
+}
 
-  Widget _emptyState() {
-    final filtered = _filter == NoteFilter.todos ||
-        _filter == NoteFilter.notes ||
-        _query.trim().isNotEmpty;
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.narrowed});
+
+  final bool narrowed;
+
+  @override
+  Widget build(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpace.xl),
@@ -424,15 +395,15 @@ class _HomePageState extends State<HomePage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            MonoLabel(filtered ? 'FILTER / NO MATCH' : 'INDEX / EMPTY'),
+            MonoLabel(narrowed ? 'FILTER / NO MATCH' : 'INDEX / EMPTY'),
             const SizedBox(height: AppSpace.sm),
             EditorialHeading(
-              filtered ? 'Nothing here\nyet.' : 'Nothing written\nyet.',
+              narrowed ? 'Nothing here\nyet.' : 'Nothing written\nyet.',
               style: AppType.headlineLg,
             ),
             const SizedBox(height: AppSpace.sm),
             Text(
-              filtered
+              narrowed
                   ? 'No notes match this filter. Try another one.'
                   : 'Tap New note to start writing, or Checklist for '
                       'something you can tick off.',
@@ -440,6 +411,98 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ---- add menu -----------------------------------------------------------------
+
+/// Two-way add: a plain note or a checklist. Both dim at the cap.
+class _AddMenu extends StatelessWidget {
+  const _AddMenu();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<NotesBloc, NotesState>(
+      buildWhen: (previous, current) =>
+          previous.isAtLimit != current.isAtLimit ||
+          previous.limit != current.limit,
+      builder: (context, state) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (state.isAtLimit)
+            Container(
+              margin: const EdgeInsets.only(bottom: AppSpace.sm),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.sm + 2, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.errorContainer,
+                borderRadius: AppRadius.std,
+                border: Border.all(color: AppColors.error, width: AppStroke.rule),
+              ),
+              child: MonoLabel('${state.limit} NOTE LIMIT REACHED',
+                  color: AppColors.onErrorContainer),
+            ),
+          GestureDetector(
+            onTap: () => _newNote(context, NoteKind.todo),
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.md, vertical: AppSpace.sm + 2),
+              decoration: BoxDecoration(
+                color: AppColors.paper,
+                borderRadius: AppRadius.std,
+                border:
+                    Border.all(color: AppColors.ink, width: AppStroke.hairline),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.checklist_rounded, size: 16, color: AppColors.ink),
+                  SizedBox(width: AppSpace.sm),
+                  MonoLabel('CHECKLIST', color: AppColors.ink),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpace.sm),
+          GestureDetector(
+            onTap: () => _newNote(context, NoteKind.text),
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              decoration: const BoxDecoration(
+                borderRadius: AppRadius.std,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.ink,
+                    offset: Offset(AppStroke.offset, AppStroke.offset),
+                    blurRadius: 0,
+                  ),
+                ],
+              ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpace.md + 2, vertical: AppSpace.md - 2),
+                decoration: BoxDecoration(
+                  color: AppColors.ink,
+                  borderRadius: AppRadius.std,
+                  border: Border.all(
+                      color: AppColors.ink, width: AppStroke.hairline),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add, size: 18, color: AppColors.paper),
+                    SizedBox(width: AppSpace.sm),
+                    MonoLabel('NEW NOTE', color: AppColors.paper),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

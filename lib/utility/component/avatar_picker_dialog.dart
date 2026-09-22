@@ -1,7 +1,9 @@
-import 'package:atomic_notes/profile/profile_store.dart';
+import 'package:atomic_notes/profile/profile_store.dart' show Avatars;
+import 'package:atomic_notes/state/profile/profile_cubit.dart';
 import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// A small popup with every bundled avatar. Tapping one sets it and closes.
 class AvatarPickerDialog extends StatelessWidget {
@@ -24,10 +26,10 @@ class AvatarPickerDialog extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpace.lg),
         constraints: const BoxConstraints(maxWidth: 360),
         child: SingleChildScrollView(
-          child: AnimatedBuilder(
-            animation: ProfileStore.instance,
-            builder: (context, _) {
-              final String current = ProfileStore.instance.avatarAsset;
+          child: BlocBuilder<ProfileCubit, ProfileState>(
+            builder: (context, profile) {
+              final String current = profile.avatarAsset;
+              final cubit = context.read<ProfileCubit>();
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -52,19 +54,18 @@ class AvatarPickerDialog extends StatelessWidget {
                           selected: Avatars.all[i] == current,
                           size: _tile,
                           onTap: () async {
-                            await ProfileStore.instance
-                                .setAvatar(Avatars.all[i]);
+                            await cubit.setAvatar(Avatars.all[i]);
                             if (context.mounted) Navigator.pop(context);
                           },
                         ),
                     ],
                   ),
                   const SizedBox(height: AppSpace.lg),
-                  if (ProfileStore.instance.hasCustomAvatar) ...[
+                  if (profile.hasCustomAvatar) ...[
                     GhostButton(
                       label: 'Use default photo',
                       onTap: () async {
-                        await ProfileStore.instance.setAvatar(null);
+                        await cubit.setAvatar(null);
                         if (context.mounted) Navigator.pop(context);
                       },
                     ),
