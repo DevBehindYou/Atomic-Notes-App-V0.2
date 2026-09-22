@@ -1,7 +1,7 @@
 import 'package:atomic_notes/api/atomic_notes_api.dart';
 import 'package:atomic_notes/authentication/auth_services/auth_service.dart';
-import 'package:atomic_notes/security/two_factor.dart';
 import 'package:atomic_notes/state/profile/profile_cubit.dart';
+import 'package:atomic_notes/state/two_factor/two_factor_armed_cubit.dart';
 import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/avatar_picker_dialog.dart';
@@ -279,54 +279,56 @@ class _EditProfilePageState extends State<EditProfilePage> {
   // ---- privacy and security -----------------------------------------------
 
   Widget _privacy() {
-    return BlocBuilder<ProfileCubit, ProfileState>(
-      builder: (context, profile) => AnimatedBuilder(
-      animation: TwoFactor.instance,
-      builder: (context, _) {
-        final bool armed = TwoFactor.instance.isArmed;
-        return EditorialModule(
-          fill: AppColors.surfaceLowest,
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              // Shown for the look of the profile only: nothing else in the app
-              // reads it.
-              _Row(
-                label: 'Public profile',
-                value: const Text('Allow others to discover your profile',
-                    style: AppType.bodySm),
-                trailing: CupertinoSwitch(
-                  value: profile.publicProfile,
-                  activeTrackColor: AppColors.signal,
-                  onChanged: context.read<ProfileCubit>().setPublicProfile,
-                ),
+    return BlocProvider(
+      create: (_) => TwoFactorArmedCubit(),
+      child: BlocBuilder<ProfileCubit, ProfileState>(
+        builder: (context, profile) => BlocBuilder<TwoFactorArmedCubit, bool>(
+          builder: (context, armed) {
+            return EditorialModule(
+              fill: AppColors.surfaceLowest,
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  // Shown for the look of the profile only: nothing else in the app
+                  // reads it.
+                  _Row(
+                    label: 'Public profile',
+                    value: const Text('Allow others to discover your profile',
+                        style: AppType.bodySm),
+                    trailing: CupertinoSwitch(
+                      value: profile.publicProfile,
+                      activeTrackColor: AppColors.signal,
+                      onChanged: context.read<ProfileCubit>().setPublicProfile,
+                    ),
+                  ),
+                  const HairRule(),
+                  _Row(
+                    label: 'Two-factor authentication',
+                    onTap: () => Navigator.pushNamed(context, '/twofactor'),
+                    value: Text(
+                      armed ? 'Enabled' : 'Off',
+                      style: armed
+                          ? AppType.bodySm.copyWith(
+                              color: AppColors.signal,
+                              fontWeight: FontWeight.w600)
+                          : AppType.bodySm,
+                    ),
+                    trailing: const Icon(Icons.chevron_right,
+                        size: 20, color: AppColors.outline),
+                  ),
+                  const HairRule(),
+                  // Google is the only sign-in there is; the row is informational.
+                  const _Row(
+                    label: 'Connected accounts',
+                    value: Text('Google', style: AppType.bodySm),
+                    trailing: DataChip('Connected',
+                        active: true, activeColor: AppColors.signal),
+                  ),
+                ],
               ),
-              const HairRule(),
-              _Row(
-                label: 'Two-factor authentication',
-                onTap: () => Navigator.pushNamed(context, '/twofactor'),
-                value: Text(
-                  armed ? 'Enabled' : 'Off',
-                  style: armed
-                      ? AppType.bodySm.copyWith(
-                          color: AppColors.signal, fontWeight: FontWeight.w600)
-                      : AppType.bodySm,
-                ),
-                trailing: const Icon(Icons.chevron_right,
-                    size: 20, color: AppColors.outline),
-              ),
-              const HairRule(),
-              // Google is the only sign-in there is; the row is informational.
-              const _Row(
-                label: 'Connected accounts',
-                value: Text('Google', style: AppType.bodySm),
-                trailing: DataChip('Connected',
-                    active: true, activeColor: AppColors.signal),
-              ),
-            ],
-          ),
-        );
-      },
+            );
+          },
+        ),
       ),
     );
   }
