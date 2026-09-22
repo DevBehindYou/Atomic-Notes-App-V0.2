@@ -6,6 +6,7 @@ import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/logo_container.dart';
 import 'package:atomic_notes/utility/component/my_snackbar.dart';
+import 'package:atomic_notes/utility/splash_route_resolver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
@@ -68,18 +69,21 @@ class _LockScreenState extends State<LockScreen> {
 
       if (!_mounted) return;
       if (authenticated) {
-        // The device lock has passed. With two-factor on, the code comes next
-        // (and that page continues to the vault or the notes itself). If the
-        // vault is still sealed on this device, ask for the recovery phrase
-        // before showing notes.
-        if (TwoFactor.instance.isArmed) {
-          Navigator.pushReplacementNamed(context, '/twofactorgate');
-        } else if (Vault.instance.isLocked) {
-          Navigator.pushReplacementNamed(context, '/vaultunlock',
-              arguments: true);
-        } else {
-          Navigator.pushReplacementNamed(context, '/mainpage');
-        }
+        // The device lock has passed, so continue the same gate order the
+        // splash screen started: two-factor, then the vault, then the notes.
+        // Onboarding never re-triggers here, only at the very first launch.
+        final route = const SplashRouteResolver().resolve(
+          isSignedIn: true,
+          isAuthOn: false,
+          twoFactorArmed: TwoFactor.instance.isArmed,
+          vaultLocked: Vault.instance.isLocked,
+          hasSeenOnboarding: true,
+        );
+        Navigator.pushReplacementNamed(
+          context,
+          route.routeName,
+          arguments: route == SplashRoute.vaultUnlock ? true : null,
+        );
       }
     } on PlatformException catch (e) {
       if (!_mounted) return;

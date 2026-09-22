@@ -1,4 +1,5 @@
 import 'package:atomic_notes/security/two_factor.dart';
+import 'package:atomic_notes/state/two_factor/two_factor_armed_cubit.dart';
 import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/my_appbar.dart';
@@ -6,6 +7,7 @@ import 'package:atomic_notes/utility/component/my_snackbar.dart';
 import 'package:atomic_notes/utility/component/two_factor_code_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 enum _Stage { overview, setup, codes }
@@ -158,21 +160,21 @@ class _TwoFactorPageState extends State<TwoFactorPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.paper,
-      appBar: const MyAppBar(text: 'Two-factor'),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-            AppSpace.md, AppSpace.lg, AppSpace.md, AppSpace.xl),
-        child: AnimatedBuilder(
-          animation: _tf,
-          builder: (context, _) {
-            return switch (_stage) {
-              _Stage.setup => _setupView(),
-              _Stage.codes => _codesView(),
-              _Stage.overview =>
-                _tf.isArmed ? _armedView() : _offView(),
-            };
+    return BlocProvider(
+      create: (_) => TwoFactorArmedCubit(source: _tf),
+      child: Scaffold(
+        backgroundColor: AppColors.paper,
+        appBar: const MyAppBar(text: 'Two-factor'),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpace.md, AppSpace.lg, AppSpace.md, AppSpace.xl),
+          child: switch (_stage) {
+            _Stage.setup => _setupView(),
+            _Stage.codes => _codesView(),
+            _Stage.overview => BlocBuilder<TwoFactorArmedCubit, bool>(
+                builder: (context, armed) =>
+                    armed ? _armedView() : _offView(),
+              ),
           },
         ),
       ),
