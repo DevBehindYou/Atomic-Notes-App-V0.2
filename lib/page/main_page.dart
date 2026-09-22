@@ -188,7 +188,7 @@ class _MainPageState extends State<MainPage> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const MonoLabel('ATOMIC', small: true),
+                          const MonoLabel('Atomic Notes', small: true),
                           Text(
                             username!,
                             maxLines: 1,
