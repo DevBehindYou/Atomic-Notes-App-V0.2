@@ -7,6 +7,7 @@ import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/logo_container.dart';
 import 'package:atomic_notes/utility/component/logout_dialogbox.dart';
 import 'package:atomic_notes/utility/component/two_factor_code_field.dart';
+import 'package:atomic_notes/utility/splash_route_resolver.dart';
 import 'package:flutter/material.dart';
 
 /// The second step when Atomic opens: the 6-digit code from the authenticator
@@ -115,13 +116,21 @@ class _TwoFactorGatePageState extends State<TwoFactorGatePage> {
   }
 
   void _enter() {
-    // The device lock and this check have both passed. If the vault is still
-    // sealed on this device, ask for the recovery phrase before the notes.
-    if (Vault.instance.isLocked) {
-      Navigator.pushReplacementNamed(context, '/vaultunlock', arguments: true);
-    } else {
-      Navigator.pushReplacementNamed(context, '/mainpage');
-    }
+    // The device lock and this code check have both passed; two-factor is
+    // done either way, so continue the same gate order past it: the vault,
+    // then the notes.
+    final route = const SplashRouteResolver().resolve(
+      isSignedIn: true,
+      isAuthOn: false,
+      twoFactorArmed: false,
+      vaultLocked: Vault.instance.isLocked,
+      hasSeenOnboarding: true,
+    );
+    Navigator.pushReplacementNamed(
+      context,
+      route.routeName,
+      arguments: route == SplashRoute.vaultUnlock ? true : null,
+    );
   }
 
   Future<void> _turnOffHere() async {

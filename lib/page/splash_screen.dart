@@ -12,6 +12,7 @@ import 'package:atomic_notes/theme/app_tokens.dart';
 import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/app_info.dart';
 import 'package:atomic_notes/utility/component/logo_container.dart';
+import 'package:atomic_notes/utility/splash_route_resolver.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_ce/hive_ce.dart';
 
@@ -80,42 +81,31 @@ class _SplashPageState extends State<SplashPage> {
       await Future.delayed(const Duration(milliseconds: 900));
       if (!mounted) return;
 
-      // The device lock takes priority. It used to be reachable only from the
-      // "has local notes" branch, so a user with biometrics on but an empty
-      // local cache was routed past it into the app.
-      if (isAuthOn) {
-        Navigator.pushReplacementNamed(context, '/lockscreen');
-        return;
-      }
-
-      // Two-factor gate. Like the vault gate below, it is only reached here
-      // when the device lock is off; lock_screen sends its users on itself.
-      if (TwoFactor.instance.isArmed) {
-        Navigator.pushReplacementNamed(context, '/twofactorgate');
-        return;
-      }
-
-      // Vault gate. Only reached when the device lock is off; when it is on,
-      // lock_screen routes here itself after a successful check, so the
-      // biometric gate always comes first.
-      if (Vault.instance.isLocked) {
-        Navigator.pushReplacementNamed(context, '/vaultunlock',
-            arguments: true);
-        return;
-      }
+      // One resolver owns the gate order (device lock, two-factor, vault,
+      // onboarding) so lock_screen and two_factor_gate_page, which continue
+      // this same decision from further along, cannot drift from it.
+      final route = const SplashRouteResolver().resolve(
+        isSignedIn: true,
+        isAuthOn: isAuthOn,
+        twoFactorArmed: TwoFactor.instance.isArmed,
+        vaultLocked: Vault.instance.isLocked,
+        hasSeenOnboarding: hasSeenOnboarding,
+      );
 
       // Onboarding is keyed off its own persisted flag. It used to be keyed
       // off `NOTESLIST == null`, which is only written when the user saves
       // their first note — so anyone who hadn't written a note yet got the
       // 6-page tutorial on every single launch.
-      if (!hasSeenOnboarding) {
+      if (route == SplashRoute.onboarding) {
         await authBox.put('hasSeenOnboarding', true);
         if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/onboardingscreen');
-        return;
       }
 
-      Navigator.pushReplacementNamed(context, '/mainpage');
+      Navigator.pushReplacementNamed(
+        context,
+        route.routeName,
+        arguments: route == SplashRoute.vaultUnlock ? true : null,
+      );
     } catch (error) {
       // Fall back to the login page rather than sitting on the splash forever.
       if (!mounted) return;
