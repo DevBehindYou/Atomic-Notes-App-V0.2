@@ -37,15 +37,20 @@ final class EnergyState extends Equatable {
   /// How many notes the account may hold, as the Server reports it.
   int get noteLimit => wallet.noteLimit;
 
-  /// Another 10 notes can be bought.
-  bool get canRaiseNoteLimit => noteLimit < limits.noteLimitCeiling;
+  /// The tier the next purchase reaches, or null at the ceiling.
+  NoteLimitTier? get nextTier => limits.tierAfter(noteLimit);
 
-  /// There are enough coins for the next step.
-  bool get canAffordNoteLimit => coins >= limits.noteLimitStepCostCoins;
+  /// A further tier can be bought.
+  bool get canRaiseNoteLimit => nextTier != null;
+
+  /// There are enough coins for the next tier.
+  bool get canAffordNoteLimit {
+    final tier = nextTier;
+    return tier != null && coins >= tier.costCoins;
+  }
 
   /// The limit after the next purchase.
-  int get nextNoteLimit =>
-      (noteLimit + limits.noteLimitStep).clamp(noteLimit, limits.noteLimitCeiling);
+  int get nextNoteLimit => nextTier?.limit ?? noteLimit;
 
   @override
   List<Object?> get props =>

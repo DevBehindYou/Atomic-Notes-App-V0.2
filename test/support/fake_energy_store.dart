@@ -58,19 +58,20 @@ class FakeEnergyStore extends ChangeNotifier implements EnergyStore {
 
   @override
   Future<String?> upgradeNoteLimit() async {
-    if (wallet.noteLimit >= limits.noteLimitCeiling) {
+    final tier = limits.tierAfter(wallet.noteLimit);
+    if (tier == null) {
       return 'You already have the most notes possible.';
     }
-    if (wallet.coins < limits.noteLimitStepCostCoins) {
+    if (wallet.coins < tier.costCoins) {
       return 'Not enough Atomic Coins.';
     }
     upgrades++;
     wallet = Wallet(
-      coins: wallet.coins - limits.noteLimitStepCostCoins,
+      coins: wallet.coins - tier.costCoins,
       energy: wallet.energy,
       energyCap: wallet.energyCap,
       lastDailyGrantAt: wallet.lastDailyGrantAt,
-      noteLimit: wallet.noteLimit + limits.noteLimitStep,
+      noteLimit: tier.limit,
     );
     notifyListeners();
     return null;
