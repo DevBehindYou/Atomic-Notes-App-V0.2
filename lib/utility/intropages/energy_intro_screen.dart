@@ -50,7 +50,7 @@ class _EnergyIntroScreenState extends State<EnergyIntroScreen> {
           '5 coins. Convert whenever you like from the Atomic Energy screen.',
     ),
     _EnergySlide(
-      art: _mark('atomic-coin', 'Without-label'),
+      art: _mark('atomic-coin', '2.5D'),
       eyebrow: 'SYNC COSTS',
       title: 'Instant or\nautomatic.',
       body: 'Instant sync costs 10 energy and works any time. Automatic sync '

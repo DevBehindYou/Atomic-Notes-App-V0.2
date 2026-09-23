@@ -260,7 +260,8 @@ class _EnergyViewState extends State<_EnergyView> {
         children: [
           Row(
             children: [
-              const AtomicIcon.coin(size: 34),
+              const AtomicIcon.coin(
+                  size: 34, set: 'Icons-Without-label-2.5D'),
               const SizedBox(width: AppSpace.sm + 2),
               const Expanded(
                 child: Column(
