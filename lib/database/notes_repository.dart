@@ -314,7 +314,15 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
       if (n == null) continue;
       n.deleted = true;
       n.touch();
-      n.settleDirty();
+      if (n.serverVersion == 0) {
+        // Never uploaded, so the cloud has nothing to delete: pushing this
+        // would send a tombstone for a row it never had. settleDirty() would
+        // not clear it either — it only matches a save back to already-synced
+        // content, which a fresh delete never is.
+        n.dirty = false;
+      } else {
+        n.settleDirty();
+      }
       await _persist(n.id);
     }
     notifyListeners();

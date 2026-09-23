@@ -6,8 +6,10 @@ import 'package:flutter_svg/svg.dart';
 /// instead of inventing a different visual style.
 ///
 /// Available names: `atom`, `atomic-coin`, `electron`, `proton`, `neutron`,
-/// `ad`. Sets: `Icons-Without-label` (default, clean glyphs),
-/// `Icons-With-label`, `Icons-Without-label-2.5D` (dimensional, for heroes).
+/// `ad`. Note-capacity tiers: `tachyon`, `god`, `antimatter`, `monopole`,
+/// `strangelet` (`Icons-Without-label` only). Sets: `Icons-Without-label`
+/// (default, clean glyphs), `Icons-With-label`,
+/// `Icons-Without-label-2.5D` (dimensional, for heroes).
 class AtomicIcon extends StatelessWidget {
   final String name;
   final double size;

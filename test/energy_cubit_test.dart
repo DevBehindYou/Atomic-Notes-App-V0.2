@@ -121,22 +121,42 @@ void main() {
   });
 
   group('note capacity', () {
-    test('the next step goes 20, 30, 40, 50 and stops at the ceiling', () {
+    test('the next tier goes 20, 30, 40, 50, 100 and stops at the ceiling', () {
       final steps = <int>[];
-      for (final limit in [20, 30, 40, 50]) {
+      for (final limit in [20, 30, 40, 50, 100]) {
         final cubit = EnergyCubit(
             store: FakeEnergyStore(wallet: _wallet(noteLimit: limit)));
         addTearDown(cubit.close);
         steps.add(cubit.state.nextNoteLimit);
       }
-      expect(steps, [30, 40, 50, 50]);
+      expect(steps, [30, 40, 50, 100, 100]);
     });
 
-    test('nothing can be bought at the ceiling', () {
+    test('each tier is named after a particle, biggest at the top', () {
+      final names = <String>{};
+      for (final limit in [20, 30, 40, 50]) {
+        final cubit = EnergyCubit(
+            store: FakeEnergyStore(wallet: _wallet(noteLimit: limit)));
+        addTearDown(cubit.close);
+        names.add(cubit.state.nextTier!.name);
+      }
+      expect(names, {'God', 'Antimatter', 'Monopole', 'Strangelet'});
+    });
+
+    test('the last tier costs more than the earlier ones', () {
       final cubit =
           EnergyCubit(store: FakeEnergyStore(wallet: _wallet(noteLimit: 50)));
       addTearDown(cubit.close);
+      expect(cubit.state.nextTier, const NoteLimitTier(
+          limit: 100, name: 'Strangelet', costCoins: 50));
+    });
+
+    test('nothing can be bought at the ceiling', () {
+      final cubit = EnergyCubit(
+          store: FakeEnergyStore(wallet: _wallet(noteLimit: 100)));
+      addTearDown(cubit.close);
       expect(cubit.state.canRaiseNoteLimit, isFalse);
+      expect(cubit.state.nextTier, isNull);
     });
 
     test('a step needs 10 coins', () {

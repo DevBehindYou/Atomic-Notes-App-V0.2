@@ -86,18 +86,20 @@ class _EnergyViewState extends State<_EnergyView> {
   Future<void> _raiseLimit() async {
     final cubit = _cubit;
     final now = cubit.state;
-    final l = now.limits;
+    final tier = now.nextTier;
+    if (tier == null) return; // already at the ceiling; the button is hidden
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (_) => DialogBoxLogout(
-        text: 'Spend ${l.noteLimitStepCostCoins} coins to raise your note limit '
-            'from ${now.noteLimit} to ${now.nextNoteLimit}?',
+        text: 'Spend ${tier.costCoins} coins to become ${tier.name} and raise '
+            'your note limit from ${now.noteLimit} to ${tier.limit}?',
         action: () async {
           final err = await cubit.upgradeNoteLimit();
           if (!mounted) return;
           MySnackBar(
-            text: err ?? 'You can now keep ${cubit.state.noteLimit} notes.',
+            text: err ??
+                "You're ${tier.name} now — you can keep ${tier.limit} notes.",
             sec: 3000,
           ).showMySnackBar(context);
         },
@@ -107,9 +109,11 @@ class _EnergyViewState extends State<_EnergyView> {
 
   void _needCoins() {
     final now = _cubit.state;
+    final tier = now.nextTier;
+    if (tier == null) return;
     MySnackBar(
-      text: 'The next ${now.limits.noteLimitStep} notes cost '
-          '${now.limits.noteLimitStepCostCoins} coins. You have ${now.coins}.',
+      text: 'Becoming ${tier.name} costs ${tier.costCoins} coins. '
+          'You have ${now.coins}.',
       sec: 3000,
     ).showMySnackBar(context);
   }
@@ -256,7 +260,8 @@ class _EnergyViewState extends State<_EnergyView> {
         children: [
           Row(
             children: [
-              const AtomicIcon.coin(size: 34),
+              const AtomicIcon.coin(
+                  size: 34, set: 'Icons-Without-label-2.5D'),
               const SizedBox(width: AppSpace.sm + 2),
               const Expanded(
                 child: Column(
@@ -289,12 +294,18 @@ class _EnergyViewState extends State<_EnergyView> {
     );
   }
 
+  /// The asset name for a tier's particle icon: the tier names are already exactly the
+  /// SVG file names (`assets/Atomic Icons/*/tachyon.svg` etc.), lowercased.
+  static String _tierIcon(String tierName) => tierName.toLowerCase();
+
   /// How many notes the account can hold, and the way to raise it with coins.
   Widget _capacityModule(EnergyState state) {
     final l = state.limits;
     final int used = state.notesUsed;
     final int limit = state.noteLimit;
-    final bool atCeiling = !state.canRaiseNoteLimit;
+    final NoteLimitTier? next = state.nextTier;
+    final bool atCeiling = next == null;
+    final currentTier = l.tierFor(limit);
     return EditorialModule(
       padding: const EdgeInsets.all(AppSpace.md),
       child: Column(
@@ -302,22 +313,13 @@ class _EnergyViewState extends State<_EnergyView> {
         children: [
           Row(
             children: [
-              Container(
-                height: 34,
-                width: 34,
-                decoration: const BoxDecoration(
-                  color: AppColors.ink,
-                  borderRadius: AppRadius.std,
-                ),
-                child: const Icon(Icons.sticky_note_2_outlined,
-                    size: 18, color: AppColors.paper),
-              ),
+              AtomicIcon(_tierIcon(currentTier?.name ?? 'tachyon'), size: 34),
               const SizedBox(width: AppSpace.sm + 2),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const MonoLabel('NOTE CAPACITY'),
+                    MonoLabel(currentTier?.name ?? 'Note capacity'),
                     const SizedBox(height: 2),
                     Text('$used of $limit notes used', style: AppType.bodySm),
                   ],
@@ -329,25 +331,57 @@ class _EnergyViewState extends State<_EnergyView> {
           const SizedBox(height: AppSpace.md),
           Row(
             children: [
-              for (int v = l.noteLimitFree; v <= l.noteLimitCeiling; v += l.noteLimitStep)
+              for (final tier in l.noteLimitTiers)
                 Expanded(
                   child: Container(
-                    key: ValueKey('capacity-$v'),
+                    key: ValueKey('capacity-${tier.limit}'),
                     margin: EdgeInsets.only(
-                        right: v + l.noteLimitStep <= l.noteLimitCeiling ? 4 : 0),
+                        right: tier == l.noteLimitTiers.last ? 0 : 4),
                     height: 28,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: v <= limit ? AppColors.ink : Colors.transparent,
+                      color: tier.limit <= limit ? AppColors.ink : Colors.transparent,
                       borderRadius: AppRadius.sm,
                       border: Border.all(
-                          color: v <= limit ? AppColors.ink : AppColors.outlineVariant,
+                          color: tier.limit <= limit
+                              ? AppColors.ink
+                              : AppColors.outlineVariant,
                           width: AppStroke.rule),
                     ),
                     child: Text(
-                      '$v',
+                      '${tier.limit}',
                       style: AppType.labelMonoSm.copyWith(
-                          color: v <= limit ? AppColors.paper : AppColors.slateData),
+                          color: tier.limit <= limit
+                              ? AppColors.paper
+                              : AppColors.slateData),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              for (final tier in l.noteLimitTiers)
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                        right: tier == l.noteLimitTiers.last ? 0 : 4),
+                    // A FittedBox, not MonoLabel directly: "Antimatter" and
+                    // "Strangelet" are wider than a fifth of the row, and
+                    // wrapping mid-word ("ANTIMATTE" / "R") reads worse than
+                    // shrinking to fit one line.
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        tier.name.toUpperCase(),
+                        maxLines: 1,
+                        style: AppType.labelMonoSm.copyWith(
+                          color: tier.limit <= limit
+                              ? AppColors.ink
+                              : AppColors.slateData,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -357,14 +391,14 @@ class _EnergyViewState extends State<_EnergyView> {
           Text(
             atCeiling
                 ? 'This is the most notes an account can hold.'
-                : 'Each step adds ${l.noteLimitStep} notes for '
-                    '${l.noteLimitStepCostCoins} coins, up to ${l.noteLimitCeiling}.',
+                : 'Become ${next.name} for ${next.costCoins} coins to hold '
+                    '${next.limit} notes.',
             style: AppType.bodySm,
           ),
-          if (!atCeiling) ...[
+          if (next != null) ...[
             const SizedBox(height: AppSpace.md),
             InkActionButton(
-              label: 'Add ${l.noteLimitStep} notes  ·  ${l.noteLimitStepCostCoins} coins',
+              label: 'Become ${next.name}  ·  ${next.costCoins} coins',
               icon: Icons.add,
               onTap: state.canAffordNoteLimit ? _raiseLimit : _needCoins,
             ),

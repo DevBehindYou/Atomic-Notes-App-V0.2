@@ -1,6 +1,6 @@
-// Note capacity: the Server decides the limit and its price; the App shows it
-// and offers the next step. The purchase itself is a Server call and is tested
-// there; these check what the App does with the numbers it is given.
+// Note capacity: the Server decides the limit, its tiers and their prices; the App shows it
+// and offers the next one. The purchase itself is a Server call and is tested there; these
+// check what the App does with the numbers it is given.
 
 import 'package:atomic_notes/database/energy_models.dart';
 import 'package:atomic_notes/database/energy_service.dart';
@@ -43,40 +43,56 @@ void main() {
       expect(Wallet.fromMap(const {'coins': 1}).noteLimit, 20);
     });
 
-    test('the limits carry the prices and the ceiling', () {
+    test('the limits carry the tiers, their prices and the ceiling', () {
       final l = EnergyLimits.fromMap(const {
         'note_limit_free': 20,
-        'note_limit_step': 10,
-        'note_limit_ceiling': 50,
-        'note_limit_step_cost_coins': 10,
+        'note_limit_ceiling': 100,
+        'note_limit_tiers': [
+          {'limit': 20, 'name': 'Tachyon', 'cost_coins': 0},
+          {'limit': 30, 'name': 'God', 'cost_coins': 10},
+          {'limit': 40, 'name': 'Antimatter', 'cost_coins': 10},
+          {'limit': 50, 'name': 'Monopole', 'cost_coins': 10},
+          {'limit': 100, 'name': 'Strangelet', 'cost_coins': 50},
+        ],
         'sync_standard_cost': 5,
         'sync_instant_cost': 10,
         'sync_standard_interval_seconds': 3600,
       });
-      expect([l.noteLimitFree, l.noteLimitStep, l.noteLimitCeiling], [20, 10, 50]);
-      expect([l.noteLimitStepCostCoins, l.syncStandardCost, l.syncInstantCost], [10, 5, 10]);
+      expect([l.noteLimitFree, l.noteLimitCeiling], [20, 100]);
+      expect(l.noteLimitTiers.map((t) => t.limit), [20, 30, 40, 50, 100]);
+      expect(l.noteLimitTiers.map((t) => t.name),
+          ['Tachyon', 'God', 'Antimatter', 'Monopole', 'Strangelet']);
+      expect(l.noteLimitTiers.map((t) => t.costCoins), [0, 10, 10, 10, 50]);
+      expect([l.syncStandardCost, l.syncInstantCost], [5, 10]);
       expect(l.syncStandardIntervalSeconds, 3600);
     });
 
     test('a missing field falls back to the defaults', () {
       final l = EnergyLimits.fromMap(const {});
-      expect(l.noteLimitCeiling, 50);
+      expect(l.noteLimitCeiling, 100);
+      expect(l.noteLimitTiers.last.name, 'Strangelet');
       expect(l.syncInstantCost, 10);
     });
   });
 
-  group('the next step', () {
-    test('goes 20, 30, 40, 50 and stops at the ceiling', () {
+  group('the next tier', () {
+    test('goes 20, 30, 40, 50, 100 and stops at the ceiling', () {
       final steps = <int>[];
-      for (final limit in [20, 30, 40, 50]) {
+      for (final limit in [20, 30, 40, 50, 100]) {
         _wallet(noteLimit: limit);
         steps.add(EnergyService.instance.nextNoteLimit);
       }
-      expect(steps, [30, 40, 50, 50]);
+      expect(steps, [30, 40, 50, 100, 100]);
       expect(EnergyService.instance.canRaiseNoteLimit, isFalse);
     });
 
-    test('needs 10 coins', () {
+    test('the last tier is Strangelet and costs more than the others', () {
+      _wallet(noteLimit: 50);
+      final tier = EnergyService.instance.nextTier;
+      expect(tier, const NoteLimitTier(limit: 100, name: 'Strangelet', costCoins: 50));
+    });
+
+    test('the first tier needs 10 coins to become God', () {
       _wallet(coins: 9);
       expect(EnergyService.instance.canAffordNoteLimit, isFalse);
       _wallet(coins: 10);
@@ -110,25 +126,30 @@ void main() {
       await tester.pump();
     }
 
-    testWidgets('shows the four steps and offers the next one', (tester) async {
+    testWidgets('shows the five tiers and offers the next one', (tester) async {
       _wallet(noteLimit: 30);
       await open(tester);
 
-      for (final v in [20, 30, 40, 50]) {
+      for (final v in [20, 30, 40, 50, 100]) {
         expect(find.byKey(ValueKey('capacity-$v')), findsOneWidget, reason: '$v');
       }
+      // GOD is also the current-tier header label, so it appears twice.
+      for (final name in ['TACHYON', 'GOD', 'ANTIMATTER', 'MONOPOLE', 'STRANGELET']) {
+        expect(find.text(name), findsWidgets, reason: name);
+      }
       expect(find.text('0 of 30 notes used'), findsOneWidget);
-      expect(find.text('ADD 10 NOTES  ·  10 COINS'), findsOneWidget);
+      expect(find.text('BECOME ANTIMATTER  ·  10 COINS'), findsOneWidget);
     });
 
     testWidgets('asks before spending coins', (tester) async {
       _wallet();
       await open(tester);
 
-      await tester.tap(find.text('ADD 10 NOTES  ·  10 COINS'));
+      await tester.tap(find.text('BECOME GOD  ·  10 COINS'));
       await tester.pumpAndSettle();
       expect(
-        find.text('Spend 10 coins to raise your note limit from 20 to 30?'),
+        find.text('Spend 10 coins to become God and raise your note limit '
+            'from 20 to 30?'),
         findsOneWidget,
       );
 
@@ -143,19 +164,19 @@ void main() {
       _wallet(coins: 2);
       await open(tester);
 
-      await tester.tap(find.text('ADD 10 NOTES  ·  10 COINS'));
+      await tester.tap(find.text('BECOME GOD  ·  10 COINS'));
       await tester.pump();
-      expect(find.text('The next 10 notes cost 10 coins. You have 2.'),
+      expect(find.text('Becoming God costs 10 coins. You have 2.'),
           findsOneWidget);
     });
 
     testWidgets('offers nothing at the ceiling', (tester) async {
-      _wallet(noteLimit: 50);
+      _wallet(noteLimit: 100);
       await open(tester);
 
       expect(find.text('This is the most notes an account can hold.'),
           findsOneWidget);
-      expect(find.text('ADD 10 NOTES  ·  10 COINS'), findsNothing);
+      expect(find.textContaining('BECOME'), findsNothing);
     });
   });
 }

@@ -70,7 +70,14 @@ class _HomePageState extends State<HomePage> {
         selector: (state) => state.selecting,
         builder: (context, selecting) => Scaffold(
           backgroundColor: AppColors.paper,
-          body: _body,
+          // A tap anywhere that isn't the search field itself drops its focus —
+          // otherwise the keyboard and cursor stay put until something else
+          // happens to take focus.
+          body: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            behavior: HitTestBehavior.opaque,
+            child: _body,
+          ),
           floatingActionButton: selecting ? null : const _AddMenu(),
         ),
       ),
@@ -192,18 +199,48 @@ class _FilterAndSearch extends StatelessWidget {
       selector: (state) => state.selecting,
       builder: (context, selecting) {
         if (selecting) return const SizedBox.shrink();
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: AppSpace.sm),
-            // Filter / sort row.
-            const SizedBox(height: 28, child: _FilterChips()),
-            const SizedBox(height: AppSpace.sm),
-            _SearchField(controller: searchController),
-          ],
+        return Padding(
+          padding: const EdgeInsets.only(top: AppSpace.sm),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Filter / sort row.
+                    const SizedBox(height: 28, child: _FilterChips()),
+                    const SizedBox(height: AppSpace.sm),
+                    _SearchField(controller: searchController),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpace.sm),
+              const _Mascot(),
+            ],
+          ),
         );
       },
+    );
+  }
+}
+
+/// "Atomi", the app's mascot. Decorative for now — its own screen and
+/// behaviour come later.
+class _Mascot extends StatelessWidget {
+  const _Mascot();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 72,
+      height: 72,
+      child: Image(
+        image: AssetImage(
+            'assets/Atomic Icons/dotgrid-blink-transparent.gif'),
+        fit: BoxFit.contain,
+      ),
     );
   }
 }
@@ -238,53 +275,54 @@ class _SearchField extends StatelessWidget {
 
   final TextEditingController controller;
 
+  static const _border = OutlineInputBorder(
+    borderRadius: AppRadius.std,
+    borderSide: BorderSide(color: AppColors.outlineVariant, width: AppStroke.rule),
+  );
+
+  static const _focusedBorder = OutlineInputBorder(
+    borderRadius: AppRadius.std,
+    borderSide: BorderSide(color: AppColors.signal, width: AppStroke.offset),
+  );
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom:
-              BorderSide(color: AppColors.outlineVariant, width: AppStroke.rule),
+    return TextField(
+      controller: controller,
+      onChanged: (v) => context.read<NotesBloc>().add(NotesQueryChanged(v)),
+      cursorColor: AppColors.signal,
+      style: AppType.bodyMd,
+      textInputAction: TextInputAction.search,
+      decoration: InputDecoration(
+        isDense: true,
+        filled: true,
+        fillColor: AppColors.surfaceLowest,
+        hintText: 'Search notes',
+        prefixIcon:
+            const Icon(Icons.search, size: 18, color: AppColors.slateData),
+        prefixIconConstraints:
+            const BoxConstraints(minWidth: 40, minHeight: 0),
+        suffixIconConstraints:
+            const BoxConstraints(minWidth: 40, minHeight: 0),
+        suffixIcon: BlocSelector<NotesBloc, NotesState, bool>(
+          selector: (state) => state.query.isNotEmpty,
+          builder: (context, hasQuery) => hasQuery
+              ? GestureDetector(
+                  onTap: () {
+                    controller.clear();
+                    context.read<NotesBloc>().add(const NotesQueryChanged(''));
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: const Icon(Icons.close,
+                      size: 16, color: AppColors.slateData),
+                )
+              : const SizedBox.shrink(),
         ),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.search, size: 18, color: AppColors.slateData),
-          const SizedBox(width: AppSpace.sm),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              onChanged: (v) =>
-                  context.read<NotesBloc>().add(NotesQueryChanged(v)),
-              cursorColor: AppColors.signal,
-              style: AppType.bodyMd,
-              textInputAction: TextInputAction.search,
-              decoration: const InputDecoration(
-                isDense: true,
-                hintText: 'Search notes',
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 10),
-              ),
-            ),
-          ),
-          BlocSelector<NotesBloc, NotesState, bool>(
-            selector: (state) => state.query.isNotEmpty,
-            builder: (context, hasQuery) => hasQuery
-                ? GestureDetector(
-                    onTap: () {
-                      controller.clear();
-                      context.read<NotesBloc>().add(const NotesQueryChanged(''));
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child:
-                          Icon(Icons.close, size: 16, color: AppColors.slateData),
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-        ],
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 10, horizontal: AppSpace.sm),
+        border: _border,
+        enabledBorder: _border,
+        focusedBorder: _focusedBorder,
       ),
     );
   }

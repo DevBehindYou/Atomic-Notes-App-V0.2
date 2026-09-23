@@ -16,6 +16,7 @@ import 'package:atomic_notes/utility/component/cloud_button.dart';
 import 'package:atomic_notes/utility/component/energy_popup.dart';
 import 'package:atomic_notes/utility/component/my_snackbar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
@@ -118,19 +119,45 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
+  // ---- back button: press twice to exit -----------------------------------
+
+  DateTime? _lastBackPress;
+
+  /// This is the app's root screen, so a back press here used to just drop
+  /// the app into the background (Android's default for a screen with
+  /// nothing to pop). The second press within the window actually exits.
+  void _handleBack() {
+    final now = DateTime.now();
+    final last = _lastBackPress;
+    if (last != null && now.difference(last) < const Duration(seconds: 2)) {
+      SystemNavigator.pop();
+      return;
+    }
+    _lastBackPress = now;
+    const MySnackBar(text: 'Press back again to exit', sec: 1500)
+        .showMySnackBar(context);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocListener<NotesBloc, NotesState>(
-      // The answer to the sync button; the notes list shows its own.
-      listenWhen: (previous, current) =>
-          previous.notice != current.notice &&
-          current.notice != null &&
-          current.notice!.fromSync,
-      listener: (context, state) => MySnackBar(
-        text: state.notice!.text,
-        sec: state.notice!.millis,
-      ).showMySnackBar(context),
-      child: _scaffold(context),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBack();
+      },
+      child: BlocListener<NotesBloc, NotesState>(
+        // The answer to the sync button; the notes list shows its own.
+        listenWhen: (previous, current) =>
+            previous.notice != current.notice &&
+            current.notice != null &&
+            current.notice!.fromSync,
+        listener: (context, state) => MySnackBar(
+          text: state.notice!.text,
+          sec: state.notice!.millis,
+        ).showMySnackBar(context),
+        child: _scaffold(context),
+      ),
     );
   }
 

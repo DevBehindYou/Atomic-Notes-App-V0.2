@@ -62,15 +62,20 @@ class EnergyService extends ChangeNotifier implements EnergyStore {
   /// How many notes the account may hold, as the Server reports it.
   int get noteLimit => _wallet.noteLimit;
 
-  /// Another 10 notes can be bought.
-  bool get canRaiseNoteLimit => noteLimit < _limits.noteLimitCeiling;
+  /// The tier the next purchase reaches, or null at the ceiling.
+  NoteLimitTier? get nextTier => _limits.tierAfter(noteLimit);
 
-  /// There are enough coins for the next step.
-  bool get canAffordNoteLimit => coins >= _limits.noteLimitStepCostCoins;
+  /// A further tier can be bought.
+  bool get canRaiseNoteLimit => nextTier != null;
+
+  /// There are enough coins for the next tier.
+  bool get canAffordNoteLimit {
+    final tier = nextTier;
+    return tier != null && coins >= tier.costCoins;
+  }
 
   /// The limit after the next purchase.
-  int get nextNoteLimit => (noteLimit + _limits.noteLimitStep)
-      .clamp(noteLimit, _limits.noteLimitCeiling);
+  int get nextNoteLimit => nextTier?.limit ?? noteLimit;
 
   // ---- lifecycle --------------------------------------------------------
 
