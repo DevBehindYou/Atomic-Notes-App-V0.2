@@ -142,7 +142,7 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithPop: (didPop, result) {
+      onPopInvoked: (didPop) {
         if (didPop) return;
         _handleBack();
       },
