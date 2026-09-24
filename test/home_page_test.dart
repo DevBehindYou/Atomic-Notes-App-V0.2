@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'support/fake_notes_source.dart';
 
-FakeNotesSource _source({int limit = 20, bool empty = false}) => FakeNotesSource(
+FakeNotesSource _source({int limit = 30, bool empty = false}) => FakeNotesSource(
       limit: limit,
       notes: empty
           ? []
