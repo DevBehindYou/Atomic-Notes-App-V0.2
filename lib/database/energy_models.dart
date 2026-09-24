@@ -118,7 +118,7 @@ class Wallet extends Equatable {
     required this.energy,
     required this.energyCap,
     required this.lastDailyGrantAt,
-    this.noteLimit = 20,
+    this.noteLimit = 30,
   });
 
   @override
@@ -140,7 +140,7 @@ class Wallet extends Equatable {
       coins: asInt(m['coins']),
       energy: asInt(m['energy']),
       energyCap: asInt(m['energy_cap'], 120),
-      noteLimit: asInt(m['note_limit'], 20),
+      noteLimit: asInt(m['note_limit'], 30),
       lastDailyGrantAt: m['last_daily_grant_at'] == null
           ? null
           : DateTime.tryParse('${m['last_daily_grant_at']}')?.toLocal(),
@@ -150,7 +150,7 @@ class Wallet extends Equatable {
 
 /// One note-capacity tier the Server sells. [costCoins] is what it takes to reach [limit] from the
 /// tier before it; 0 on the free starting tier. [name] is a particle, biggest at the top: Tachyon,
-/// God, Antimatter, Monopole, Strangelet.
+/// Antimatter, Monopole, Strangelet.
 class NoteLimitTier extends Equatable {
   final int limit;
   final String name;
@@ -193,7 +193,7 @@ class EnergyLimits extends Equatable {
   final int syncStandardIntervalSeconds;
 
   const EnergyLimits({
-    this.noteLimitFree = 20,
+    this.noteLimitFree = 30,
     this.noteLimitCeiling = 100,
     this.noteLimitTiers = _defaultTiers,
     this.syncStandardCost = 5,
@@ -202,11 +202,10 @@ class EnergyLimits extends Equatable {
   });
 
   static const _defaultTiers = <NoteLimitTier>[
-    NoteLimitTier(limit: 20, name: 'Tachyon', costCoins: 0),
-    NoteLimitTier(limit: 30, name: 'God', costCoins: 10),
+    NoteLimitTier(limit: 30, name: 'Tachyon', costCoins: 0),
     NoteLimitTier(limit: 40, name: 'Antimatter', costCoins: 10),
-    NoteLimitTier(limit: 50, name: 'Monopole', costCoins: 10),
-    NoteLimitTier(limit: 100, name: 'Strangelet', costCoins: 50),
+    NoteLimitTier(limit: 50, name: 'Monopole', costCoins: 20),
+    NoteLimitTier(limit: 100, name: 'Strangelet', costCoins: 30),
   ];
 
   @override

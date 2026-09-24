@@ -137,10 +137,9 @@ void main() {
       expect(n.updatedAt.isAfter(before), isTrue);
     });
 
-    test('the free allowance is 20, shared by notes and to-dos', () {
-      // The cap is a stored value so the future coin system can raise it
-      // without a release; 50 is only the default.
-      expect(NoteQuota.freeLimit, 20);
+    test('the free allowance is 30, shared by notes and to-dos', () {
+      // The cap is a stored value so the coin system can raise it without a release.
+      expect(NoteQuota.freeLimit, 30);
     });
 
     test('isEmpty ignores whitespace-only content', () {
