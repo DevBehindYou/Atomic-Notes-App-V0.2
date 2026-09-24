@@ -201,24 +201,36 @@ class _FilterAndSearch extends StatelessWidget {
         if (selecting) return const SizedBox.shrink();
         return Padding(
           padding: const EdgeInsets.only(top: AppSpace.sm),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Filter / sort row.
-                    const SizedBox(height: 28, child: _FilterChips()),
-                    const SizedBox(height: AppSpace.sm),
-                    _SearchField(controller: searchController),
-                  ],
+          // Some bigger-screen devices default to a larger system font scale
+          // than the phones this row was built against; left unclamped, that
+          // grows the filter chips and the search field's hint/icon past the
+          // row's intended proportions and pushes into the mascot's fixed
+          // column. Capped here so the row's own layout stays predictable
+          // regardless of the device's text-size setting.
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler:
+                  MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.15),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Filter / sort row.
+                      const SizedBox(height: 28, child: _FilterChips()),
+                      const SizedBox(height: AppSpace.sm),
+                      _SearchField(controller: searchController),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppSpace.sm),
-              const _Mascot(),
-            ],
+                const SizedBox(width: AppSpace.sm),
+                const _Mascot(),
+              ],
+            ),
           ),
         );
       },
@@ -233,13 +245,17 @@ class _Mascot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
-      width: 72,
-      height: 72,
-      child: Image(
-        image: AssetImage(
-            'assets/Atomic Icons/dotgrid-blink-transparent.gif'),
-        fit: BoxFit.contain,
+    // Hard-clipped: fixed regardless of device text scale or the GIF's own
+    // frame size, so it can never paint past its box onto the search field.
+    return const ClipRect(
+      child: SizedBox(
+        width: 72,
+        height: 72,
+        child: Image(
+          image: AssetImage(
+              'assets/Atomic Icons/dotgrid-blink-transparent.gif'),
+          fit: BoxFit.contain,
+        ),
       ),
     );
   }
