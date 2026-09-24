@@ -153,7 +153,7 @@ class EnergyService extends ChangeNotifier implements EnergyStore {
     }
   }
 
-  /// Buys the next 10 notes of capacity for coins. Returns null on success, or a
+  /// Buys the next tier of note capacity for coins. Returns null on success, or a
   /// user-facing message. Safe to repeat: the Server charges a step only once.
   @override
   Future<String?> upgradeNoteLimit() async {

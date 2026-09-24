@@ -313,7 +313,8 @@ class _EnergyViewState extends State<_EnergyView> {
         children: [
           Row(
             children: [
-              AtomicIcon(_tierIcon(currentTier?.name ?? 'tachyon'), size: 34),
+              AtomicIcon(_tierIcon(currentTier?.name ?? 'tachyon'),
+                  size: 34, set: 'Icons-Without-label-2.5D'),
               const SizedBox(width: AppSpace.sm + 2),
               Expanded(
                 child: Column(

@@ -42,9 +42,9 @@ void main() {
       addTearDown(bloc.close);
       expect(_ids(bloc.state), ['a', 'b', 'c']);
       expect(bloc.state.count, 3);
-      expect(bloc.state.limit, 20);
+      expect(bloc.state.limit, 30);
       expect(bloc.state.pending, 0);
-      expect(bloc.state.usageLabel, '3 / 20');
+      expect(bloc.state.usageLabel, '3 / 30');
       expect(bloc.state.isAtLimit, isFalse);
     });
 

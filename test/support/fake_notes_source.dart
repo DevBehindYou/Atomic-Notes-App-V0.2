@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 /// promises as the real one: a save marks the note as waiting to sync, a delete keeps a
 /// tombstone, and every change (and every sync) tells the listeners.
 class FakeNotesSource extends ChangeNotifier implements NotesSource {
-  FakeNotesSource({List<Note>? notes, this.limit = 20}) {
+  FakeNotesSource({List<Note>? notes, this.limit = 30}) {
     if (notes != null) all.addAll(notes);
   }
 

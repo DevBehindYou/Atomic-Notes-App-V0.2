@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'support/fake_notes_source.dart';
 
-FakeNotesSource _source({int limit = 20, bool empty = false}) => FakeNotesSource(
+FakeNotesSource _source({int limit = 30, bool empty = false}) => FakeNotesSource(
       limit: limit,
       notes: empty
           ? []
@@ -57,7 +57,7 @@ void main() {
     testWidgets('a card for each note and the usage in the header', (tester) async {
       await _open(tester, _source());
       expect(find.byType(NotesBulder), findsNWidgets(3));
-      expect(find.text('3 / 20'), findsOneWidget);
+      expect(find.text('3 / 30'), findsOneWidget);
       // Card titles are set in capitals by the design system.
       expect(find.text('GROCERIES'), findsOneWidget);
     });
@@ -69,7 +69,7 @@ void main() {
       source.poke();
       await tester.pump();
       await tester.pump();
-      expect(find.text('3 / 20 · 1 UNSYNCED'), findsOneWidget);
+      expect(find.text('3 / 30 · 1 UNSYNCED'), findsOneWidget);
     });
 
     testWidgets('at the limit the header and the add menu say so', (tester) async {
@@ -164,7 +164,7 @@ void main() {
 
       expect(find.text('NEW NOTE'), findsOneWidget);
       expect(find.byType(TextField), findsOneWidget);
-      expect(find.text('3 / 20'), findsOneWidget);
+      expect(find.text('3 / 30'), findsOneWidget);
     });
 
     testWidgets('delete moves the selection to the bin and says so', (tester) async {
