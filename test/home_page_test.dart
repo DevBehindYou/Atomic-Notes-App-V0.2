@@ -69,7 +69,7 @@ void main() {
       source.poke();
       await tester.pump();
       await tester.pump();
-      expect(find.text('3 / 20 · 1 UNSYNCED'), findsOneWidget);
+      expect(find.text('3 / 30 · 1 UNSYNCED'), findsOneWidget);
     });
 
     testWidgets('at the limit the header and the add menu say so', (tester) async {

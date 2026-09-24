@@ -22,7 +22,7 @@ class NoteQuota {
   static int? _memory;
 
   /// The current limit, announced whenever it changes so a screen that shows
-  /// `3 / 20` moves to `3 / 30` at once instead of at the next restart.
+  /// `3 / 30` moves to `3 / 40` at once instead of at the next restart.
   static final ValueNotifier<int> changes = ValueNotifier<int>(freeLimit);
 
   static Future<void> init() async {
