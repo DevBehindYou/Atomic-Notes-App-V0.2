@@ -173,7 +173,7 @@ void main() {
       expect(find.text('UNTITLED'), findsOneWidget);
     });
 
-    testWidgets('shows checklist rows and a done count', (tester) async {
+    testWidgets('shows checklist rows, and no done count or date', (tester) async {
       final note = Note.create(kind: NoteKind.todo)
         ..title = 'Trip'
         ..items = [
@@ -182,7 +182,9 @@ void main() {
         ];
       await tester.pumpWidget(_card(note));
 
-      expect(find.text('1/2'), findsOneWidget);
+      // A clean card: title and rows only.
+      expect(find.text('1/2'), findsNothing);
+      expect(find.textContaining(RegExp(r'\d{4}-\d{2}-\d{2}')), findsNothing);
       expect(find.text('passport'), findsOneWidget);
       expect(find.text('tickets'), findsOneWidget);
     });

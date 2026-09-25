@@ -53,33 +53,25 @@ class NotesBulder extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Just the title and the note: date, time and checklist progress
+              // live in the editor. The tick shows only while selecting.
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // No date/time here — it costs space the title and body need on
-                  // a card; it's still shown inside the note editor.
-                  const Expanded(child: SizedBox.shrink()),
-                  if (selectionMode)
-                    _Tick(on: selected)
-                  else if (note.kind == NoteKind.todo)
-                    MonoLabel(
-                      '${note.doneCount}/${note.items.length}',
-                      small: true,
-                      color: note.items.isNotEmpty &&
-                              note.doneCount == note.items.length
-                          ? AppColors.signal
-                          : null,
+                  Expanded(
+                    child: EditorialHeading(
+                      untitled ? 'Untitled' : note.title,
+                      style: AppType.headlineSm.copyWith(
+                        color: untitled ? AppColors.outline : AppColors.ink,
+                      ),
+                      maxLines: 2,
                     ),
+                  ),
+                  if (selectionMode) ...[
+                    const SizedBox(width: AppSpace.sm),
+                    _Tick(on: selected),
+                  ],
                 ],
-              ),
-              const SizedBox(height: AppSpace.sm),
-              const HairRule(),
-              const SizedBox(height: AppSpace.sm),
-              EditorialHeading(
-                untitled ? 'Untitled' : note.title,
-                style: AppType.headlineSm.copyWith(
-                  color: untitled ? AppColors.outline : AppColors.ink,
-                ),
-                maxLines: 2,
               ),
               if (note.kind == NoteKind.todo)
                 _checklist()

@@ -10,6 +10,7 @@ import 'package:atomic_notes/database/sync_status.dart';
 import 'package:atomic_notes/security/vault.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleState, WidgetsBinding, WidgetsBindingObserver;
 import 'package:hive_ce/hive_ce.dart';
 
 /// Single source of truth for notes, and the sync engine.
@@ -25,12 +26,10 @@ import 'package:hive_ce/hive_ce.dart';
 /// `updated_at`, tombstones for deletes. MIGRATION NOTE: this used to also
 /// carry a Realtime subscription (a change on one device landing on others
 /// without a manual sync) — the new backend has no realtime/push layer yet
-/// (see the server's README), so that line is no longer true. Updates now
-/// arrive only via the hourly timer, the connectivity-restored trigger, or a
-/// manual sync — a real UX regression from before, not a simplification, and
-/// worth restoring deliberately (websocket push, or at least shorter polling)
-/// rather than treating this comment as still accurate.
-class NotesRepository extends ChangeNotifier implements NotesSource {
+/// (see the server's README). Automatic sync runs at launch, when the app comes
+/// back to the foreground, when the network returns, a few seconds after a local
+/// change (or as soon as the Server's hourly window opens), and hourly.
+class NotesRepository extends ChangeNotifier with WidgetsBindingObserver implements NotesSource {
   NotesRepository._() {
     // The note limit comes from the Server's wallet; the notes screens show it, so they must hear when it moves.
     NoteQuota.changes.addListener(notifyListeners);
@@ -51,10 +50,13 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
 
   StreamSubscription<List<ConnectivityResult>>? _connectivity;
 
-  /// Periodic background ("hourly") standard sync. Editing a note no longer
-  /// uploads immediately — a change stays local until the user taps sync
-  /// (instant) or this timer fires (standard, server-windowed to once/hour).
+  /// Periodic background ("hourly") standard sync, for a device left open.
   Timer? _hourly;
+
+  /// Pending automatic sync after a local change. Edits in quick succession
+  /// reset it, so a burst of edits is one sync.
+  Timer? _afterEdit;
+  static const Duration _editSettle = Duration(seconds: 8);
 
   bool _syncing = false;
   bool get isSyncing => _syncing;
@@ -109,6 +111,25 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
         unawaited(syncNow());
       }
     });
+    // Timers do not run while Android keeps the app in the background.
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(syncNow());
+  }
+
+  /// Sends local changes without a manual sync: a few seconds after the edits
+  /// settle when automatic sync is open, else just after the window opens.
+  void _scheduleAutoSync() {
+    if (_userId == null || !SyncStatusHelper.isSyncOn) return;
+    final blockedUntil = nextAutoSyncAt;
+    final wait = blockedUntil == null
+        ? _editSettle
+        : blockedUntil.difference(DateTime.now()) + const Duration(seconds: 5);
+    _afterEdit?.cancel();
+    _afterEdit = Timer(wait, () => unawaited(syncNow()));
   }
 
   Future<void> _loadFromDisk() async {
@@ -211,8 +232,7 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
     // MIGRATION NOTE: `_listenRealtime()` used to be called here — removed,
     // the new backend has no realtime endpoint (see class doc comment above).
     // Initial sync: fetches existing cloud notes (a free pull when there's
-    // nothing pending). Editing does NOT sync after this — only this hourly
-    // timer or a manual sync uploads changes.
+    // nothing pending) and sends anything edited since the last one.
     unawaited(syncNow());
     _hourly?.cancel();
     _hourly = Timer.periodic(
@@ -222,6 +242,8 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
   Future<void> stop() async {
     _hourly?.cancel();
     _hourly = null;
+    _afterEdit?.cancel();
+    _afterEdit = null;
     _autoRetry?.cancel();
     _autoRetry = null;
     _standardBlockedUntil = null;
@@ -240,7 +262,9 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
   @override
   void dispose() {
     unawaited(_connectivity?.cancel());
+    WidgetsBinding.instance.removeObserver(this);
     _hourly?.cancel();
+    _afterEdit?.cancel();
     _autoRetry?.cancel();
     super.dispose();
   }
@@ -302,8 +326,7 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
     _notes[note.id] = note;
     await _persist(note.id);
     notifyListeners();
-    // No auto-upload: the note is saved locally and marked dirty; it reaches the
-    // cloud only on a manual (instant) sync or the hourly background sync.
+    if (note.dirty) _scheduleAutoSync();
   }
 
   /// Soft delete, so the removal can reach other devices.
@@ -326,8 +349,7 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
       await _persist(n.id);
     }
     notifyListeners();
-    // Saved locally as a tombstone; the deletion reaches the cloud on the next
-    // manual or hourly sync, not immediately.
+    if (_notes.values.any((n) => n.dirty)) _scheduleAutoSync();
   }
 
   /// Wipes the local cache only — used on logout. Does not touch the server.
@@ -754,6 +776,7 @@ class NotesRepository extends ChangeNotifier implements NotesSource {
     n.settleDirty();
     await _persist(id);
     notifyListeners();
+    if (n.dirty) _scheduleAutoSync();
     return true;
   }
 

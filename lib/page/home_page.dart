@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:atomic_notes/database/note.dart';
 import 'package:atomic_notes/page/notes_editor_page.dart';
 import 'package:atomic_notes/state/notes/notes_bloc.dart';
@@ -238,41 +240,134 @@ class _FilterAndSearch extends StatelessWidget {
   }
 }
 
-/// "Atomi", the app's mascot. A tap names when automatic sync can next send;
-/// its own screen and behaviour beyond that come later.
-class _Mascot extends StatelessWidget {
+/// "Atomi", the app's mascot. A tap opens a small chat bubble saying how sync
+/// stands; it closes by itself after a few seconds or on a second tap.
+class _Mascot extends StatefulWidget {
   const _Mascot();
 
-  /// "Automatic sync is open" when it can send now, else how long until it can.
-  static String _autoSyncText(DateTime? next) {
-    if (next == null) return 'Automatic sync is open now.';
-    final minutes = (next.difference(DateTime.now()).inSeconds / 60).ceil();
-    return minutes <= 1
-        ? 'Next automatic sync in under a minute.'
-        : 'Next automatic sync in $minutes min.';
+  /// What Atomi says: whether changes are waiting, and when automatic sync next opens.
+  static String syncMessage(DateTime? next, int pending) {
+    final now = DateTime.now();
+    final waiting = pending == 1 ? '1 change' : '$pending changes';
+    if (next == null || !next.isAfter(now)) {
+      return pending == 0 ? 'All notes synced.' : 'Syncing $waiting now.';
+    }
+    final minutes = (next.difference(now).inSeconds / 60).ceil();
+    final when = minutes <= 1 ? 'under a minute' : '$minutes min';
+    return pending == 0
+        ? 'All synced. Next sync in $when.'
+        : '$waiting waiting. Next sync in $when.';
   }
 
-  void _showNextSync(BuildContext context) {
-    final next = context.read<NotesBloc>().state.nextAutoSyncAt;
-    MySnackBar(text: _autoSyncText(next), sec: 2000).showMySnackBar(context);
+  @override
+  State<_Mascot> createState() => _MascotState();
+}
+
+class _MascotState extends State<_Mascot> {
+  final OverlayPortalController _bubble = OverlayPortalController();
+  final LayerLink _anchor = LayerLink();
+  Timer? _autoHide;
+  String _message = '';
+
+  void _onTap() {
+    _autoHide?.cancel();
+    if (_bubble.isShowing) {
+      _bubble.hide();
+      return;
+    }
+    final state = context.read<NotesBloc>().state;
+    setState(() => _message = _Mascot.syncMessage(state.nextAutoSyncAt, state.pending));
+    _bubble.show();
+    _autoHide = Timer(const Duration(seconds: 3), () {
+      if (mounted && _bubble.isShowing) _bubble.hide();
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoHide?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Hard-clipped: fixed regardless of device text scale or the GIF's own
-    // frame size, so it can never paint past its box onto the search field.
-    return GestureDetector(
-      onTap: () => _showNextSync(context),
-      behavior: HitTestBehavior.opaque,
-      child: const ClipRect(
-        child: SizedBox(
-          width: 72,
-          height: 72,
-          child: Image(
-            image: AssetImage(
-                'assets/Atomic Icons/dotgrid-blink-transparent.gif'),
-            fit: BoxFit.contain,
+    return CompositedTransformTarget(
+      link: _anchor,
+      child: OverlayPortal(
+        controller: _bubble,
+        overlayChildBuilder: (_) => Positioned(
+          width: 240,
+          child: CompositedTransformFollower(
+            link: _anchor,
+            showWhenUnlinked: false,
+            targetAnchor: Alignment.bottomRight,
+            followerAnchor: Alignment.topRight,
+            offset: const Offset(0, 4),
+            child: Align(
+              alignment: Alignment.topRight,
+              child: _ChatBubble(text: _message),
+            ),
           ),
+        ),
+        // Hard-clipped: fixed regardless of device text scale or the GIF's own
+        // frame size, so it can never paint past its box onto the search field.
+        child: GestureDetector(
+          onTap: _onTap,
+          behavior: HitTestBehavior.opaque,
+          child: const ClipRect(
+            child: SizedBox(
+              width: 72,
+              height: 72,
+              child: Image(
+                image: AssetImage(
+                    'assets/Atomic Icons/dotgrid-blink-transparent.gif'),
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A chat-style bubble, its sharp corner pointing up at the mascot.
+class _ChatBubble extends StatelessWidget {
+  const _ChatBubble({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      builder: (context, t, child) => Opacity(
+        opacity: t,
+        child: Transform.scale(
+          scale: 0.9 + 0.1 * t,
+          alignment: Alignment.topRight,
+          child: child,
+        ),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: const BoxDecoration(
+            color: AppColors.ink,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(14),
+              topRight: Radius.circular(3),
+              bottomLeft: Radius.circular(14),
+              bottomRight: Radius.circular(14),
+            ),
+            boxShadow: [
+              BoxShadow(color: Color(0x33000000), blurRadius: 10, offset: Offset(0, 3)),
+            ],
+          ),
+          child: Text(text, style: AppType.bodySm.copyWith(color: AppColors.paper)),
         ),
       ),
     );
