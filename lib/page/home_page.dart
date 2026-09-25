@@ -238,23 +238,41 @@ class _FilterAndSearch extends StatelessWidget {
   }
 }
 
-/// "Atomi", the app's mascot. Decorative for now — its own screen and
-/// behaviour come later.
+/// "Atomi", the app's mascot. A tap names when automatic sync can next send;
+/// its own screen and behaviour beyond that come later.
 class _Mascot extends StatelessWidget {
   const _Mascot();
+
+  /// "Automatic sync is open" when it can send now, else how long until it can.
+  static String _autoSyncText(DateTime? next) {
+    if (next == null) return 'Automatic sync is open now.';
+    final minutes = (next.difference(DateTime.now()).inSeconds / 60).ceil();
+    return minutes <= 1
+        ? 'Next automatic sync in under a minute.'
+        : 'Next automatic sync in $minutes min.';
+  }
+
+  void _showNextSync(BuildContext context) {
+    final next = context.read<NotesBloc>().state.nextAutoSyncAt;
+    MySnackBar(text: _autoSyncText(next), sec: 2000).showMySnackBar(context);
+  }
 
   @override
   Widget build(BuildContext context) {
     // Hard-clipped: fixed regardless of device text scale or the GIF's own
     // frame size, so it can never paint past its box onto the search field.
-    return const ClipRect(
-      child: SizedBox(
-        width: 72,
-        height: 72,
-        child: Image(
-          image: AssetImage(
-              'assets/Atomic Icons/dotgrid-blink-transparent.gif'),
-          fit: BoxFit.contain,
+    return GestureDetector(
+      onTap: () => _showNextSync(context),
+      behavior: HitTestBehavior.opaque,
+      child: const ClipRect(
+        child: SizedBox(
+          width: 72,
+          height: 72,
+          child: Image(
+            image: AssetImage(
+                'assets/Atomic Icons/dotgrid-blink-transparent.gif'),
+            fit: BoxFit.contain,
+          ),
         ),
       ),
     );

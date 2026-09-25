@@ -55,9 +55,9 @@ class NotesBulder extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(
-                    child: MonoLabel(_stamp(note.createdAt), small: true),
-                  ),
+                  // No date/time here — it costs space the title and body need on
+                  // a card; it's still shown inside the note editor.
+                  const Expanded(child: SizedBox.shrink()),
                   if (selectionMode)
                     _Tick(on: selected)
                   else if (note.kind == NoteKind.todo)
@@ -145,13 +145,6 @@ class NotesBulder extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  /// Trims the stored ISO stamp down to "YYYY-MM-DD HH:MM" for the card.
-  static String _stamp(DateTime d) {
-    final l = d.toLocal();
-    String p(int v) => v.toString().padLeft(2, '0');
-    return '${l.year}-${p(l.month)}-${p(l.day)} ${p(l.hour)}:${p(l.minute)}';
   }
 }
 
