@@ -36,6 +36,7 @@ final class NotesState extends Equatable {
     this.binCount = 0,
     this.syncing = false,
     this.notice,
+    this.nextAutoSyncAt,
   });
 
   /// The notes on view: filtered, searched and ordered. The notes themselves are edited in place
@@ -62,6 +63,9 @@ final class NotesState extends Equatable {
   final bool syncing;
   final NotesNotice? notice;
 
+  /// When the next automatic sync can send changes, or null when it is open now.
+  final DateTime? nextAutoSyncAt;
+
   bool get selecting => selected.isNotEmpty;
   bool get isAtLimit => count >= limit;
   int get remaining => (limit - count).clamp(0, limit);
@@ -85,6 +89,7 @@ final class NotesState extends Equatable {
     int? binCount,
     bool? syncing,
     NotesNotice? notice,
+    DateTime? nextAutoSyncAt,
   }) =>
       NotesState(
         notes: notes ?? this.notes,
@@ -98,6 +103,7 @@ final class NotesState extends Equatable {
         binCount: binCount ?? this.binCount,
         syncing: syncing ?? this.syncing,
         notice: notice ?? this.notice,
+        nextAutoSyncAt: nextAutoSyncAt ?? this.nextAutoSyncAt,
       );
 
   @override
@@ -112,5 +118,6 @@ final class NotesState extends Equatable {
         binCount,
         syncing,
         notice,
+        nextAutoSyncAt,
       ];
 }

@@ -60,6 +60,24 @@ void main() {
       expect(find.text('3 / 30'), findsOneWidget);
       // Card titles are set in capitals by the design system.
       expect(find.text('GROCERIES'), findsOneWidget);
+      // The date/time moved into the editor; the card no longer carries it.
+      expect(find.textContaining('2026-09'), findsNothing);
+    });
+
+    testWidgets('tapping the mascot says automatic sync is open', (tester) async {
+      await _open(tester, _source());
+      await tester.tap(find.byType(Image));
+      await tester.pump();
+      expect(find.text('Automatic sync is open now.'), findsOneWidget);
+    });
+
+    testWidgets('tapping the mascot names the wait when sync is blocked', (tester) async {
+      final source = _source()
+        ..nextAutoSyncAt = DateTime.now().add(const Duration(minutes: 40));
+      await _open(tester, source);
+      await tester.tap(find.byType(Image));
+      await tester.pump();
+      expect(find.textContaining('Next automatic sync in'), findsOneWidget);
     });
 
     testWidgets('waiting notes are counted next to the usage', (tester) async {

@@ -82,6 +82,7 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
       limit: source.limit,
       pending: source.pendingCount,
       binCount: source.binNotes.length,
+      nextAutoSyncAt: source.nextAutoSyncAt,
     );
   }
 
