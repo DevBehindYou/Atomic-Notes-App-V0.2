@@ -64,20 +64,45 @@ void main() {
       expect(find.textContaining('2026-09'), findsNothing);
     });
 
-    testWidgets('tapping the mascot says automatic sync is open', (tester) async {
+    testWidgets('tapping the mascot opens a chat bubble that closes by itself', (tester) async {
       await _open(tester, _source());
       await tester.tap(find.byType(Image));
       await tester.pump();
-      expect(find.text('Automatic sync is open now.'), findsOneWidget);
+      expect(find.text('All notes synced.'), findsOneWidget);
+      expect(find.byType(SnackBar), findsNothing);
+
+      await tester.pump(const Duration(seconds: 4));
+      expect(find.text('All notes synced.'), findsNothing);
     });
 
-    testWidgets('tapping the mascot names the wait when sync is blocked', (tester) async {
+    testWidgets('a second tap closes the bubble', (tester) async {
+      await _open(tester, _source());
+      await tester.tap(find.byType(Image));
+      await tester.pump();
+      await tester.tap(find.byType(Image));
+      await tester.pump();
+      expect(find.text('All notes synced.'), findsNothing);
+    });
+
+    testWidgets('the bubble names the wait when automatic sync is closed', (tester) async {
       final source = _source()
         ..nextAutoSyncAt = DateTime.now().add(const Duration(minutes: 40));
       await _open(tester, source);
       await tester.tap(find.byType(Image));
       await tester.pump();
-      expect(find.textContaining('Next automatic sync in'), findsOneWidget);
+      expect(find.text('All synced. Next sync in 40 min.'), findsOneWidget);
+    });
+
+    testWidgets('the bubble counts changes that are waiting', (tester) async {
+      final source = _source();
+      await _open(tester, source);
+      source.byId('c')!.touch();
+      source.poke();
+      await tester.pump();
+      await tester.pump();
+      await tester.tap(find.byType(Image));
+      await tester.pump();
+      expect(find.text('Syncing 1 change now.'), findsOneWidget);
     });
 
     testWidgets('waiting notes are counted next to the usage', (tester) async {
