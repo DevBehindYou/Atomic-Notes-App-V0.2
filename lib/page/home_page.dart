@@ -34,6 +34,11 @@ class _HomePageState extends State<HomePage> {
 
   late final Widget _body;
 
+  /// Below this height (a phone on its side) the header would leave the grid a strip a
+  /// card tall, so it scrolls away with the notes instead of staying put.
+  static const double _shortScreen = 480;
+  late final Widget _scrollingBody;
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +52,13 @@ class _HomePageState extends State<HomePage> {
         _Header(searchController: _searchCtrl),
         Expanded(child: _NotesGrid(controller: _controller)),
       ],
+    );
+    _scrollingBody = NestedScrollView(
+      headerSliverBuilder: (context, _) => [
+        SliverToBoxAdapter(child: _Header(searchController: _searchCtrl)),
+      ],
+      // No controller of its own: the grid scrolls through the NestedScrollView's.
+      body: const _NotesGrid(),
     );
   }
 
@@ -78,7 +90,10 @@ class _HomePageState extends State<HomePage> {
           body: GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
             behavior: HitTestBehavior.opaque,
-            child: _body,
+            child: LayoutBuilder(
+              builder: (context, constraints) =>
+                  constraints.maxHeight < _shortScreen ? _scrollingBody : _body,
+            ),
           ),
           floatingActionButton: selecting ? null : const _AddMenu(),
         ),
@@ -246,11 +261,16 @@ class _Mascot extends StatefulWidget {
   const _Mascot();
 
   /// What Atomi says: whether changes are waiting, and when automatic sync next opens.
-  static String syncMessage(DateTime? next, int pending) {
+  /// "Syncing now" only while a sync is running: offline, changes just wait.
+  static String syncMessage(DateTime? next, int pending, {bool syncing = false}) {
     final now = DateTime.now();
     final waiting = pending == 1 ? '1 change' : '$pending changes';
+    if (pending > 0 && syncing) return 'Syncing $waiting now.';
     if (next == null || !next.isAfter(now)) {
-      return pending == 0 ? 'All notes synced.' : 'Syncing $waiting now.';
+      if (pending == 0) return 'All notes synced.';
+      return pending == 1
+          ? '1 change waiting. It syncs by itself when you are online.'
+          : '$waiting waiting. They sync by themselves when you are online.';
     }
     final minutes = (next.difference(now).inSeconds / 60).ceil();
     final when = minutes <= 1 ? 'under a minute' : '$minutes min';
@@ -276,7 +296,8 @@ class _MascotState extends State<_Mascot> {
       return;
     }
     final state = context.read<NotesBloc>().state;
-    setState(() => _message = _Mascot.syncMessage(state.nextAutoSyncAt, state.pending));
+    setState(() => _message =
+        _Mascot.syncMessage(state.nextAutoSyncAt, state.pending, syncing: state.syncing));
     _bubble.show();
     _autoHide = Timer(const Duration(seconds: 3), () {
       if (mounted && _bubble.isShowing) _bubble.hide();
@@ -498,9 +519,10 @@ void _newNote(BuildContext context, NoteKind kind) {
 }
 
 class _NotesGrid extends StatelessWidget {
-  const _NotesGrid({required this.controller});
+  const _NotesGrid({this.controller});
 
-  final ScrollController controller;
+  /// Null inside the short-screen layout, where the NestedScrollView drives the scrolling.
+  final ScrollController? controller;
 
   @override
   Widget build(BuildContext context) {

@@ -31,7 +31,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final AuthServices serve = AuthServices();
   final NotesRepository repo = NotesRepository.instance;
   bool _isLoading = false;
-  String? username = "@atomicuser";
+  String? username = AuthServices.cachedHandle;
   bool _isMounted = true;
 
   @override

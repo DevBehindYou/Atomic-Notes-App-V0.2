@@ -76,7 +76,8 @@ class _CloudNotesViewState extends State<_CloudNotesView> {
     }
     if (cloud == null) {
       return const _Verdict('Offline',
-          'The cloud could not be reached. Nothing was changed.', AppColors.error);
+          'The cloud could not be reached. Notes on this device are safe and sync when the connection is back.',
+          AppColors.error);
     }
     if (waiting > 0) {
       return _Verdict(

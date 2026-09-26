@@ -6,6 +6,7 @@ import 'package:atomic_notes/database/energy_service.dart';
 import 'package:atomic_notes/database/note.dart';
 import 'package:atomic_notes/database/note_quota.dart';
 import 'package:atomic_notes/database/notes_source.dart';
+import 'package:atomic_notes/database/sync_policy.dart';
 import 'package:atomic_notes/database/sync_status.dart';
 import 'package:atomic_notes/security/vault.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -58,6 +59,15 @@ class NotesRepository extends ChangeNotifier with WidgetsBindingObserver impleme
   Timer? _afterEdit;
   static const Duration _editSettle = Duration(seconds: 8);
 
+  /// Android reports a network as connected before it can carry traffic, so a
+  /// reconnect waits this long before syncing.
+  Timer? _afterReconnect;
+  static const Duration _reconnectSettle = Duration(seconds: 3);
+
+  /// Retry of an automatic sync that lost the network (see [networkRetryDelay]).
+  Timer? _networkRetry;
+  int _networkRetries = 0;
+
   bool _syncing = false;
   bool get isSyncing => _syncing;
 
@@ -108,7 +118,9 @@ class NotesRepository extends ChangeNotifier with WidgetsBindingObserver impleme
     // Push anything that was written while offline as soon as we're back.
     _connectivity = Connectivity().onConnectivityChanged.listen((result) {
       if (!result.contains(ConnectivityResult.none)) {
-        unawaited(syncNow());
+        _networkRetries = 0;
+        _afterReconnect?.cancel();
+        _afterReconnect = Timer(_reconnectSettle, () => unawaited(syncNow()));
       }
     });
     // Timers do not run while Android keeps the app in the background.
@@ -117,7 +129,9 @@ class NotesRepository extends ChangeNotifier with WidgetsBindingObserver impleme
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) unawaited(syncNow());
+    if (state != AppLifecycleState.resumed) return;
+    _networkRetries = 0;
+    unawaited(syncNow());
   }
 
   /// Sends local changes without a manual sync: a few seconds after the edits
@@ -244,6 +258,11 @@ class NotesRepository extends ChangeNotifier with WidgetsBindingObserver impleme
     _hourly = null;
     _afterEdit?.cancel();
     _afterEdit = null;
+    _afterReconnect?.cancel();
+    _afterReconnect = null;
+    _networkRetry?.cancel();
+    _networkRetry = null;
+    _networkRetries = 0;
     _autoRetry?.cancel();
     _autoRetry = null;
     _standardBlockedUntil = null;
@@ -265,6 +284,8 @@ class NotesRepository extends ChangeNotifier with WidgetsBindingObserver impleme
     WidgetsBinding.instance.removeObserver(this);
     _hourly?.cancel();
     _afterEdit?.cancel();
+    _afterReconnect?.cancel();
+    _networkRetry?.cancel();
     _autoRetry?.cancel();
     super.dispose();
   }
@@ -439,12 +460,17 @@ class NotesRepository extends ChangeNotifier with WidgetsBindingObserver impleme
       // so a completed sync means every queued change reached the server.
       var drained = false;
       for (var batch = 0; batch < _maxPushBatches && !drained; batch++) {
-        // The Server has closed automatic sync for now: leave the changes waiting.
-        if (!instant && nextAutoSyncAt != null) break;
+        // The Server has closed automatic sync for now: leave the changes waiting, but still
+        // collect a push that was sent and never answered.
+        if (!mayPushNow(instant: instant, nextAutoSyncAt: nextAutoSyncAt,
+            hasUnansweredPush: _hasUnansweredPush(uid))) {
+          break;
+        }
         drained = !await _push(uid, instant: instant);
       }
       await _pull(uid);
       unawaited(EnergyService.instance.refresh());
+      _networkRetries = 0;
       if (!drained) {
         if (!instant && nextAutoSyncAt != null) {
           // Not a failure: the changes send at the next automatic sync, or now with instant sync.
@@ -456,10 +482,16 @@ class NotesRepository extends ChangeNotifier with WidgetsBindingObserver impleme
       return true;
     } on TimeoutException {
       debugPrint('NotesRepository: sync timed out');
+      _retryAfterNetworkFailure();
       lastError = 'Sync is taking longer than expected. Your changes are saved; retry to recover the same operation.';
       return false;
     } catch (e) {
       debugPrint('NotesRepository: sync failed: ${e.runtimeType}: $e');
+      if (isNetworkFailure(e)) {
+        _retryAfterNetworkFailure();
+        lastError = 'Connection lost. Your changes are saved on this device and finish syncing when you are back online.';
+        return false;
+      }
       final text = e.toString();
       lastError = text.contains('note_limit_reached')
           ? 'Note limit reached — delete a note or add capacity in Atomic Energy'
@@ -486,6 +518,22 @@ class NotesRepository extends ChangeNotifier with WidgetsBindingObserver impleme
     }
   }
 
+  /// A push this account sent whose answer never arrived (app killed, connection lost).
+  bool _hasUnansweredPush(String uid) {
+    final saved = _box.get(_pendingPushKey);
+    return saved is Map && saved['userId'] == uid;
+  }
+
+  /// Tries again a little later after the network dropped mid-sync, a few times, so a
+  /// push the Server already took is collected without waiting for the next edit or resume.
+  void _retryAfterNetworkFailure() {
+    final delay = networkRetryDelay(_networkRetries);
+    if (delay == null) return;
+    _networkRetries++;
+    _networkRetry?.cancel();
+    _networkRetry = Timer(delay, () => unawaited(syncNow()));
+  }
+
   /// Remembers that automatic sync is closed for [seconds] (or the usual hour) and
   /// tries once more just after it opens, so an hourly timer that fires a moment
   /// early does not cost a whole extra hour.
@@ -504,9 +552,8 @@ class NotesRepository extends ChangeNotifier with WidgetsBindingObserver impleme
   /// Sends one batch. Returns true when more changes are still waiting.
   Future<bool> _push(String uid, {required bool instant}) async {
     if (_userId != uid) return false;
-    final saved = _box.get(_pendingPushKey);
-    Map<String, dynamic>? pending = saved is Map && saved['userId'] == uid
-        ? Map<String, dynamic>.from(saved) : null;
+    Map<String, dynamic>? pending = _hasUnansweredPush(uid)
+        ? Map<String, dynamic>.from(_box.get(_pendingPushKey) as Map) : null;
     if (pending == null) {
       // A note edited back to what the cloud holds needs no upload.
       var settled = false;
@@ -600,8 +647,9 @@ class NotesRepository extends ChangeNotifier with WidgetsBindingObserver impleme
     if (_userId != uid) return false;
     await _box.delete(_pendingPushKey);
     await _skipOwnPushedRows(writtenSeqs);
-    // The Server takes a standard sync once per hour, so the next one is not open yet.
-    if (!instant && results.any((r) => r['ok'] == true)) {
+    // The Server takes a standard sync once per hour, so the next one is not open yet. A replayed
+    // instant request does not close it, whatever started this attempt.
+    if (closesAutomaticSync(sentInstant: pending['instant'] == true, results: results)) {
       _standardBlockedUntil = DateTime.now().add(
           Duration(seconds: EnergyService.instance.limits.syncStandardIntervalSeconds));
     }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:atomic_notes/database/note.dart';
 import 'package:atomic_notes/database/notes_source.dart';
 import 'package:flutter/foundation.dart';
@@ -34,6 +36,9 @@ class FakeNotesSource extends ChangeNotifier implements NotesSource {
 
   /// What the next [syncNow] answers.
   bool syncResult = true;
+
+  /// When set, [syncNow] waits for it, so a test can look at the screen mid-sync.
+  Completer<void>? syncGate;
   int syncCalls = 0;
   bool? lastSyncInstant;
   int saveCalls = 0;
@@ -105,6 +110,7 @@ class FakeNotesSource extends ChangeNotifier implements NotesSource {
   Future<bool> syncNow({bool instant = false}) async {
     syncCalls++;
     lastSyncInstant = instant;
+    if (syncGate != null) await syncGate!.future;
     // A real sync clears the waiting notes when it works.
     if (syncResult) {
       for (final n in all) {

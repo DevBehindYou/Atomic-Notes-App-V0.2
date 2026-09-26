@@ -53,6 +53,7 @@ class ProfileStore extends ChangeNotifier implements ProfileSource {
   String get _who => ApiClient.instance.currentUserId ?? 'device';
   String get _avatarKey => 'avatar.$_who';
   String get _publicKey => 'public.$_who';
+  String get _usernameKey => 'username.$_who';
 
   dynamic _get(String key) => _box != null ? _box!.get(key) : _memory[key];
 
@@ -96,6 +97,15 @@ class ProfileStore extends ChangeNotifier implements ProfileSource {
     }
     notifyListeners();
   }
+
+  /// The last username the Server gave this account, so the header can show it
+  /// offline instead of the placeholder. Null until one has been fetched.
+  String? get cachedUsername {
+    final Object? saved = _get(_usernameKey);
+    return saved is String && saved.isNotEmpty ? saved : null;
+  }
+
+  Future<void> cacheUsername(String username) => _put(_usernameKey, username);
 
   /// A display-only switch: it changes nothing else in the app.
   @override
