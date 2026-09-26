@@ -78,6 +78,14 @@ void main() {
   });
 
   group('profile store', () {
+    test('remembers the last username for offline starts', () async {
+      expect(ProfileStore.instance.cachedUsername, isNull);
+      await ProfileStore.instance.cacheUsername('ada');
+      expect(ProfileStore.instance.cachedUsername, 'ada');
+      await ProfileStore.instance.cacheUsername('');
+      expect(ProfileStore.instance.cachedUsername, isNull);
+    });
+
     test('starts on the default photo', () {
       expect(ProfileStore.instance.avatarAsset, Avatars.defaultAsset);
       expect(ProfileStore.instance.hasCustomAvatar, isFalse);

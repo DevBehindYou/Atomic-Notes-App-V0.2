@@ -1,6 +1,7 @@
 // ignore_for_file: unnecessary_null_comparison
 
 import 'package:atomic_notes/api/atomic_notes_api.dart';
+import 'package:atomic_notes/profile/profile_store.dart';
 
 class AuthServices {
   final ApiClient _api = ApiClient.instance;
@@ -16,10 +17,17 @@ class AuthServices {
       // call site. The server does a real upsert in one round trip now
       // (routes/atomicuser.ts), so there's nothing left to catch here.
       await _api.setUsername(username);
+      await ProfileStore.instance.cacheUsername(username);
       return "Username updated wait for refresh";
     } catch (error) {
       return "Error updating username";
     }
+  }
+
+  /// The handle to show before the Server answers: the last one this account had.
+  static String get cachedHandle {
+    final cached = ProfileStore.instance.cachedUsername;
+    return cached == null ? "@atomicuser" : "@$cached";
   }
 
   // fetch user info from the Atomic Notes API
@@ -29,9 +37,11 @@ class AuthServices {
       if (username == "") {
         return "@atomicuser";
       }
+      await ProfileStore.instance.cacheUsername(username);
       return "@$username";
     } catch (error) {
-      return "@atomicuser";
+      // Offline or the Server is down: keep the name this account last had.
+      return cachedHandle;
     }
   }
 }

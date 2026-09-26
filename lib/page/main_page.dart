@@ -29,7 +29,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   final AuthServices serve = AuthServices();
-  String? username = "@atomicuser";
+  String? username = AuthServices.cachedHandle;
   bool _isLoading2 = false;
   int currentIndex = 0;
 

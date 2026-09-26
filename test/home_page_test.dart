@@ -1,6 +1,8 @@
 // The notes screen, driven through the Bloc with a fake store: what it shows, what a tap does,
 // and how little it rebuilds. It needs neither Hive nor the network.
 
+import 'dart:async';
+
 import 'package:atomic_notes/database/note.dart';
 import 'package:atomic_notes/page/home_page.dart';
 import 'package:atomic_notes/state/notes/notes_bloc.dart';
@@ -102,7 +104,56 @@ void main() {
       await tester.pump();
       await tester.tap(find.byType(Image));
       await tester.pump();
+      // Nothing is running: the change waits (offline, or for the few seconds before auto-sync).
+      expect(find.text('1 change waiting. It syncs by itself when you are online.'), findsOneWidget);
+      expect(find.text('Syncing 1 change now.'), findsNothing);
+    });
+
+    testWidgets('on a short screen the header scrolls away with the notes', (tester) async {
+      // A phone on its side: 800 x 360 logical pixels.
+      tester.view.physicalSize = const Size(2400, 1080);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final bloc = NotesBloc(
+        source: _source(),
+        isSyncEnabled: () => true,
+        isOnline: () async => true,
+        instantSyncCost: () => 10,
+      );
+      addTearDown(bloc.close);
+      await tester.pumpWidget(MaterialApp(
+        home: BlocProvider<NotesBloc>.value(value: bloc, child: const HomePage()),
+      ));
+      await tester.pump();
+      expect(find.byType(NestedScrollView), findsOneWidget);
+      expect(find.text('NOTES').hitTestable(), findsWidgets);
+      await tester.drag(find.byType(NestedScrollView), const Offset(0, -300));
+      await tester.pumpAndSettle();
+      // The title has scrolled off; the cards now have the screen.
+      expect(find.text('NOTES').hitTestable(), findsNothing);
+      expect(find.byType(NotesBulder).hitTestable(), findsWidgets);
+    });
+
+    testWidgets('on a tall screen the header stays put', (tester) async {
+      await _open(tester, _source());
+      expect(find.byType(NestedScrollView), findsNothing);
+    });
+
+    testWidgets('while a sync runs the bubble says it is syncing', (tester) async {
+      final source = _source()..syncGate = Completer<void>();
+      final bloc = await _open(tester, source);
+      source.byId('c')!.touch();
+      source.poke();
+      await tester.pump();
+      bloc.add(const NotesSyncRequested(instant: true));
+      await tester.pump();
+      await tester.pump();
+      await tester.tap(find.byType(Image));
+      await tester.pump();
       expect(find.text('Syncing 1 change now.'), findsOneWidget);
+      source.syncGate!.complete();
+      await tester.pump(const Duration(seconds: 4));
     });
 
     testWidgets('waiting notes are counted next to the usage', (tester) async {
