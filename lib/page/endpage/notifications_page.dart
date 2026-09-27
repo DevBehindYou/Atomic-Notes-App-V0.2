@@ -100,89 +100,95 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   Widget _card(AppNotification n) {
     final accent = _priorityColor(n.priority);
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpace.sm),
-      padding: const EdgeInsets.all(AppSpace.md),
-      decoration: BoxDecoration(
-        color: n.isRead ? AppColors.surfaceLowest : AppColors.surface,
-        borderRadius: AppRadius.std,
-        border: Border.all(
-          color: n.isCritical ? AppColors.error : AppColors.outlineVariant,
-          width: n.isCritical ? AppStroke.hairline : AppStroke.rule,
+    // A tap on the card marks it read; the ✕ and the action button keep their own taps.
+    return GestureDetector(
+      key: ValueKey('notification-${n.id}'),
+      onTap: n.isRead ? null : () => service.markRead(n.id),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpace.sm),
+        padding: const EdgeInsets.all(AppSpace.md),
+        decoration: BoxDecoration(
+          color: n.isRead ? AppColors.surfaceLowest : AppColors.surface,
+          borderRadius: AppRadius.std,
+          border: Border.all(
+            color: n.isCritical ? AppColors.error : AppColors.outlineVariant,
+            width: n.isCritical ? AppStroke.hairline : AppStroke.rule,
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _leading(n, accent),
-              const SizedBox(width: AppSpace.sm + 2),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        if (!n.isRead) ...[
-                          Container(
-                            height: 8,
-                            width: 8,
-                            decoration: const BoxDecoration(
-                              color: AppColors.signal,
-                              shape: BoxShape.circle,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _leading(n, accent),
+                const SizedBox(width: AppSpace.sm + 2),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          if (!n.isRead) ...[
+                            Container(
+                              height: 8,
+                              width: 8,
+                              decoration: const BoxDecoration(
+                                color: AppColors.signal,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpace.sm),
+                          ],
+                          Expanded(
+                            child: Text(
+                              n.subject,
+                              style: AppType.headlineSm,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const SizedBox(width: AppSpace.sm),
                         ],
-                        Expanded(
-                          child: Text(
-                            n.subject,
-                            style: AppType.headlineSm,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    MonoLabel(_stamp(n.createdAt), small: true),
-                  ],
-                ),
-              ),
-              // Pinned notifications (admin-set) can't be dismissed: show a
-              // pin marker instead of the ✕.
-              if (n.dismissible)
-                GestureDetector(
-                  onTap: () => service.dismiss(n.id),
-                  behavior: HitTestBehavior.opaque,
-                  child: const Padding(
-                    padding: EdgeInsets.only(left: AppSpace.sm),
-                    child:
-                        Icon(Icons.close, size: 18, color: AppColors.slateData),
+                      ),
+                      const SizedBox(height: 2),
+                      MonoLabel(_stamp(n.createdAt), small: true),
+                    ],
                   ),
-                )
-              else
-                const Padding(
-                  padding: EdgeInsets.only(left: AppSpace.sm),
-                  child: Icon(Icons.push_pin_outlined,
-                      size: 16, color: AppColors.slateData),
                 ),
-            ],
-          ),
-          const SizedBox(height: AppSpace.sm),
-          Text(n.description, style: AppType.bodyMd),
-          if (n.hasAction) ...[
-            const SizedBox(height: AppSpace.md),
-            GhostButton(
-              label: n.action!,
-              icon: Icons.arrow_forward,
-              expand: false,
-              onTap: () => _onAction(n),
+                // Pinned notifications (admin-set) can't be dismissed: show a
+                // pin marker instead of the ✕.
+                if (n.dismissible)
+                  GestureDetector(
+                    onTap: () => service.dismiss(n.id),
+                    behavior: HitTestBehavior.opaque,
+                    child: const Padding(
+                      padding: EdgeInsets.only(left: AppSpace.sm),
+                      child:
+                          Icon(Icons.close, size: 18, color: AppColors.slateData),
+                    ),
+                  )
+                else
+                  const Padding(
+                    padding: EdgeInsets.only(left: AppSpace.sm),
+                    child: Icon(Icons.push_pin_outlined,
+                        size: 16, color: AppColors.slateData),
+                  ),
+              ],
             ),
+            const SizedBox(height: AppSpace.sm),
+            Text(n.description, style: AppType.bodyMd),
+            if (n.hasAction) ...[
+              const SizedBox(height: AppSpace.md),
+              GhostButton(
+                label: n.action!,
+                icon: Icons.arrow_forward,
+                expand: false,
+                onTap: () => _onAction(n),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
