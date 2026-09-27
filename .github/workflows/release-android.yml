@@ -104,13 +104,22 @@ jobs:
           API_BASE_URL: ${{ vars.API_BASE_URL }}
           GOOGLE_SERVER_CLIENT_ID: ${{ vars.GOOGLE_SERVER_CLIENT_ID }}
         run: |
+          # The version exactly as pubspec.yaml writes it (for example 2.03.4+7), passed explicitly so the
+          # APK's versionName keeps that form and the versionCode is the build number.
+          VERSION="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | tr -d '\r' | head -1)"
+          case "$VERSION" in
+            *+*) ;;
+            *) echo "::error::pubspec.yaml version must look like 2.03.4+7 (name+build), got '$VERSION'."; exit 1 ;;
+          esac
           flutter build apk --release --split-per-abi --no-pub \
+            --build-name="${VERSION%%+*}" --build-number="${VERSION##*+}" \
             --dart-define=API_BASE_URL="$API_BASE_URL" \
             --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
 
       - name: Verify signature and record fingerprints
         run: |
           APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)"
+          AAPT="$(ls -d "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)"
           cd build/app/outputs/flutter-apk
           test -n "$(ls app-*-release.apk 2>/dev/null)" || { echo "::error::No release APKs were produced."; exit 1; }
           {
@@ -138,6 +147,8 @@ jobs:
               # Informational only: if the format differs, print the raw output instead of failing.
               grep -E "^Verified using|Signer #1 certificate (DN|SHA-256|SHA-1)" "$RUNNER_TEMP/certs.txt" || cat "$RUNNER_TEMP/certs.txt"
               sha256sum "$apk"
+              # Package, versionCode and versionName as Android will read them.
+              "$AAPT" dump badging "$apk" | head -1 || true
               echo '```'
             done
             echo "Register the certificate **SHA-1** above in the Google Cloud **Android** OAuth client for package \`com.notes.atomic\`."
