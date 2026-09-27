@@ -20,7 +20,7 @@
   <p>
     <a href="#get-the-app"><img alt="Platform" src="https://img.shields.io/badge/platform-Android%20%C2%B7%20iOS-15171B.svg?style=flat-square" /></a>
     <img alt="Built with" src="https://img.shields.io/badge/built%20with-Flutter%20%C2%B7%20Supabase-3A2FF0.svg?style=flat-square" />
-    <img alt="Version" src="https://img.shields.io/badge/version-1.12.1-15171B.svg?style=flat-square" />
+    <img alt="Version" src="https://img.shields.io/badge/version-2.03.4-15171B.svg?style=flat-square" />
     <a href="#license"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-3A2FF0.svg?style=flat-square" /></a>
     <img alt="Status" src="https://img.shields.io/badge/status-reviving%20%E2%86%92%20open%20source%20soon-15171B.svg?style=flat-square" />
   </p>
