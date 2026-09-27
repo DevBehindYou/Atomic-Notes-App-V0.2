@@ -7,8 +7,10 @@
 class AppInfoText {
   AppInfoText._();
 
-  static const String version = "1.12.1";
-  static const String buildNumber = "3";
+  // Checked against pubspec.yaml by test/app_info_test.dart, and sent to the Server with the
+  // notification feed so messages aimed at other App versions are left out.
+  static const String version = "1.18.2";
+  static const String buildNumber = "6";
   static const String copyright = "© 2026 Atomic Notes";
 
   static String get versionLabel => "Version: $version ($buildNumber)";

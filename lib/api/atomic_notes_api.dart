@@ -253,6 +253,29 @@ class ApiClient {
     return _decode(await http.post(_uri('/energy/note-limit'), headers: _headers, body: jsonEncode({'from_limit': fromLimit}))) as Map<String, dynamic>;
   }
 
+  // ---- notifications ------------------------------------------------------
+
+  /// What the Controller published to this account, newest first. [appVersion] leaves out
+  /// messages meant for other App versions.
+  Future<List<Map<String, dynamic>>> notificationsFeed({String? appVersion}) async {
+    final data = _decode(await http.get(
+        _uri('/notifications', appVersion == null ? null : {'app_version': appVersion}),
+        headers: _headers)) as Map;
+    return (data['rows'] as List).map((row) => Map<String, dynamic>.from(row as Map)).toList();
+  }
+
+  Future<void> markNotificationRead(String id) async {
+    _decode(await http.post(_uri('/notifications/${Uri.encodeComponent(id)}/read'), headers: _headers));
+  }
+
+  Future<void> markAllNotificationsRead() async {
+    _decode(await http.post(_uri('/notifications/read-all'), headers: _headers));
+  }
+
+  Future<void> dismissNotification(String id) async {
+    _decode(await http.post(_uri('/notifications/${Uri.encodeComponent(id)}/dismiss'), headers: _headers));
+  }
+
   // ---- profile ------------------------------------------------------------
 
   Future<String> getUsername() async {
