@@ -86,7 +86,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('notification-b')));
     await tester.pump();
     expect(feed.calls.where((c) => c.startsWith('read ')), ['read a']);
-    expect(find.text('MARK ALL READ'), findsNothing, 'nothing unread is left');
+    expect(find.text('MARK ALL READ'), findsNothing, reason: 'nothing unread is left');
   });
 
   testWidgets('the ✕ dismisses without also counting as a card tap', (tester) async {
