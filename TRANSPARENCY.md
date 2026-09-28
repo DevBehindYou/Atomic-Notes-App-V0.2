@@ -1,6 +1,6 @@
 # Transparency
 
-Atomic Notes exists because a data breach taught its developer a hard lesson: most apps won't tell you plainly what happens to your data. This page does. It describes how Atomic Notes 2.03.4 handles your notes, what is protected, what isn't, and how to check it yourself. If any of this ever stops being accurate, treat it as a bug and report it.
+Atomic Notes exists because a data breach taught its developer a hard lesson: most apps won't tell you plainly what happens to your data. This page does. It describes how Atomic Notes 2.03.5 handles your notes, what is protected, what isn't, and how to check it yourself. If any of this ever stops being accurate, treat it as a bug and report it.
 
 ## What we collect
 
@@ -60,4 +60,4 @@ If you find anything that contradicts this page, that's a defect we want to fix.
 
 ---
 
-*Last reviewed: 2026-09-28, for version 2.03.4.*
+*Last reviewed: 2026-09-28, for version 2.03.5.*

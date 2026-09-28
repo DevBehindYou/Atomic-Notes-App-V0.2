@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-09-28 · Version 2.03.4 (build 7) · Status: released, source-available_
+_Last updated: 2026-09-28 · Version 2.03.5 (build 8) · Status: released, source-available_
 
 A running snapshot of where **Atomic Notes** stands. For the full feature story
 and the roadmap, see the [README](README.md). For exactly how data is handled,
