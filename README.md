@@ -45,7 +45,7 @@ An optional end-to-end vault. No AI, no ads, no trackers.</p>
 
 ## What is Atomic Notes?
 
-**Atomic Notes is a free, source-available notes app for Android that keeps your notes on your phone first and syncs them to a private folder in your own Google Drive.** It has no AI features, no ads and no analytics. An optional vault encrypts every note on the device with AES-256-GCM, using a key derived from a 6-word recovery phrase, so the sync server and Google only ever store ciphertext. Version 2.03.4 shipped on 27 September 2026.
+**Atomic Notes is a free, source-available notes app for Android that keeps your notes on your phone first and syncs them to a private folder in your own Google Drive.** It has no AI features, no ads and no analytics. An optional vault encrypts every note on the device with AES-256-GCM, using a key derived from a 6-word recovery phrase, so the sync server and Google only ever store ciphertext. Version 2.03.5 shipped on 28 September 2026.
 
 ### At a glance
 
@@ -53,7 +53,7 @@ An optional end-to-end vault. No AI, no ads, no trackers.</p>
 | :--- | :--- |
 | **What it is** | A local-first app for text notes and checklists |
 | **Platform** | Android 9 (API 28) or newer. APKs for `arm64-v8a`, `armeabi-v7a` and `x86_64` |
-| **Latest version** | 2.03.4 (build 7), released 2026-09-27 on [GitHub Releases](https://github.com/DevBehindYou/Atomic-Notes-App-V0.2/releases/latest) |
+| **Latest version** | 2.03.5 (build 8), released 2026-09-28 on [GitHub Releases](https://github.com/DevBehindYou/Atomic-Notes-App-V0.2/releases/latest) |
 | **Where notes live** | On the device first. When you sync, one file per note goes to a `My-Atomic-Notes` folder in your Google Drive |
 | **Encryption** | Optional vault. Argon2id (64 MiB, 3 passes) turns a 6-word phrase into a key, then AES-256-GCM seals each note |
 | **Sign-in** | Your Google account. The app asks for `drive.file`, so it can only see the files it created |
@@ -242,7 +242,7 @@ Every account starts on **Tachyon** with room for 30 notes. Checklists count the
 </table>
 </div>
 
-The screens use the **Technical Editorial** design system: ink `#15171B` on paper `#F4F5F1`, with one accent, Signal `#3A2FF0`. Headings are Bebas Neue, body text is Hanken Grotesk and data is JetBrains Mono. The fonts ship inside the app, so it looks right with no network. Some screenshots come from the August 2026 build, so small details (like the dates on note cards) differ from 2.03.4.
+The screens use the **Technical Editorial** design system: ink `#15171B` on paper `#F4F5F1`, with one accent, Signal `#3A2FF0`. Headings are Bebas Neue, body text is Hanken Grotesk and data is JetBrains Mono. The fonts ship inside the app, so it looks right with no network. Some screenshots come from the August 2026 build, so small details (like the dates on note cards) differ from the current version.
 
 ---
 
@@ -336,7 +336,7 @@ Most of a push is Google Drive's own write time, about 1.5 s per file. The serve
 2. Download the APK for your phone. Most phones need the file ending in **`arm64-v8a.apk`**. Older 32-bit phones need `armeabi-v7a`, and emulators need `x86_64`.
 3. Open the file and allow installs from your browser or file manager when Android asks.
 
-Version 2.03.4 installs over 1.18.2 and keeps your notes. Both use the same package name (`com.notes.atomic`) and the same signing key.
+Version 2.03.5 installs over 2.03.4 and 1.18.2 and keeps your notes. Both use the same package name (`com.notes.atomic`) and the same signing key.
 
 **Check the signature before you install.** Every release is signed with the Atomic Notes release key:
 
@@ -346,7 +346,7 @@ Certificate SHA-1:   20:08:8F:BF:45:D7:D1:5A:4C:26:69:D6:47:84:16:E2:7F:32:85:45
 ```
 
 ```bash
-apksigner verify --print-certs atomic-notes-2.03.4-arm64-v8a.apk
+apksigner verify --print-certs atomic-notes-2.03.5-arm64-v8a.apk
 ```
 
 Each release page also lists the SHA-256 of every APK file and the GitHub Actions run that built it.
@@ -395,9 +395,9 @@ A build you sign yourself can't sign in with Google, because the sign-in client 
 - [x] Atomic Energy, Atomic Coins and note capacity tiers
 - [x] Notification center and team announcements
 - [x] Biometric lock, two-step verification and blocked screenshots
+- [x] Buttons in notifications that open web links
 - [ ] Publish the Google OAuth consent screen, so anyone can sign in
 - [ ] Coin packs you can buy, for faster sync and more notes
-- [ ] Buttons in notifications that open web links
 - [ ] Background sync while the app is closed
 - [ ] iOS build
 
