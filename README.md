@@ -3,7 +3,7 @@
     About > Description: Local-first notes app for Android. Syncs to your own Google Drive, optional AES-256-GCM vault. No AI, no ads, no trackers.
     About > Website:     https://atomic-notes-community.vercel.app
     About > Topics:      local-first, notes-app, android, flutter, dart, google-drive, end-to-end-encryption,
-                         privacy, offline-first, no-tracking, aes-gcm, argon2, open-source
+                         privacy, offline-first, no-tracking, aes-gcm, argon2, source-available
     Settings > Social preview: upload Project-Images/README/og-banner.png (1200x630)
 -->
 
@@ -26,7 +26,7 @@ An optional end-to-end vault. No AI, no ads, no trackers.</p>
   <img alt="Built with Flutter 3.44.8" src="https://img.shields.io/badge/Flutter-3.44.8-15171B?style=flat-square&logo=flutter&logoColor=white" />
   <a href="https://github.com/DevBehindYou/Atomic-Notes-App-V0.2/actions/workflows/flutter-ci.yml"><img alt="Flutter CI" src="https://github.com/DevBehindYou/Atomic-Notes-App-V0.2/actions/workflows/flutter-ci.yml/badge.svg" /></a>
   <img alt="No AI, no ads, no trackers" src="https://img.shields.io/badge/no%20AI%20%C2%B7%20no%20ads%20%C2%B7%20no%20trackers-F4F5F1?style=flat-square&labelColor=F4F5F1&color=F4F5F1" />
-  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-3A2FF0?style=flat-square" /></a>
+  <a href="LICENSE"><img alt="License: source-available, all rights reserved" src="https://img.shields.io/badge/license-source--available-3A2FF0?style=flat-square" /></a>
 </p>
 
 <p>
@@ -45,7 +45,7 @@ An optional end-to-end vault. No AI, no ads, no trackers.</p>
 
 ## What is Atomic Notes?
 
-**Atomic Notes is a free, open-source notes app for Android that keeps your notes on your phone first and syncs them to a private folder in your own Google Drive.** It has no AI features, no ads and no analytics. An optional vault encrypts every note on the device with AES-256-GCM, using a key derived from a 6-word recovery phrase, so the sync server and Google only ever store ciphertext. Version 2.03.4 shipped on 27 September 2026.
+**Atomic Notes is a free, source-available notes app for Android that keeps your notes on your phone first and syncs them to a private folder in your own Google Drive.** It has no AI features, no ads and no analytics. An optional vault encrypts every note on the device with AES-256-GCM, using a key derived from a 6-word recovery phrase, so the sync server and Google only ever store ciphertext. Version 2.03.4 shipped on 27 September 2026.
 
 ### At a glance
 
@@ -59,7 +59,7 @@ An optional end-to-end vault. No AI, no ads, no trackers.</p>
 | **Sign-in** | Your Google account. The app asks for `drive.file`, so it can only see the files it created |
 | **Price** | Free. Writing notes costs nothing. Cloud sync runs on Atomic Energy, which refills by 20 every 24 hours |
 | **Tracking** | None. No analytics, no crash reporter, no ad SDK |
-| **Source** | This repository, MIT licensed |
+| **Source** | Public in this repository to read and verify. Proprietary, all rights reserved |
 
 ## Contents
 
@@ -71,7 +71,7 @@ An optional end-to-end vault. No AI, no ads, no trackers.</p>
 - [Security and privacy model](#security-and-privacy-model)
 - [Performance](#performance)
 - [Install and verify](#install-and-verify)
-- [Build from source](#build-from-source)
+- [Verify the build yourself](#verify-the-build-yourself)
 - [Tech stack](#tech-stack)
 - [Roadmap](#roadmap)
 - [FAQ](#faq)
@@ -353,9 +353,9 @@ Each release page also lists the SHA-256 of every APK file and the GitHub Action
 
 ---
 
-## Build from source
+## Verify the build yourself
 
-The release APKs are built by GitHub Actions ([`release-android.yml`](.github/workflows/release-android.yml)) with Flutter 3.44.8. To build your own:
+The release APKs are built by GitHub Actions ([`release-android.yml`](.github/workflows/release-android.yml)) with Flutter 3.44.8, from the commit named on each release page. The [license](LICENSE) lets you build the app on your own machine to check it against the published source and the official release:
 
 ```bash
 git clone https://github.com/DevBehindYou/Atomic-Notes-App-V0.2.git
@@ -363,15 +363,10 @@ cd Atomic-Notes-App-V0.2
 cp lib/authentication/auth_services/cred.example.dart lib/authentication/auth_services/cred.dart
 flutter pub get
 flutter test
+flutter build apk --release --split-per-abi
 ```
 
-```bash
-flutter build apk --release --split-per-abi \
-  --dart-define=API_BASE_URL=https://your-server.example/api \
-  --dart-define=GOOGLE_SERVER_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
-```
-
-You need your own Atomic Notes Server and a Google Cloud OAuth client for sign-in and Drive. [CI.md](CI.md) covers the workflows and [TESTING.md](TESTING.md) covers the test suites.
+A build you sign yourself can't sign in with Google, because the sign-in client is tied to the release signing key. Use it to read, test and compare. You may not install it for others, share it or publish it. [CI.md](CI.md) covers the workflows and [TESTING.md](TESTING.md) covers the test suites.
 
 ---
 
@@ -464,7 +459,7 @@ Built by **DevBehindYou** (Ashutosh Sharma), who also runs the sync server and t
 - Medium: [@devbehindyou](https://medium.com/@devbehindyou)
 - X: [@devbehindyou](https://x.com/devbehindyou)
 
-Atomic Notes is released under the [MIT License](LICENSE).
+Atomic Notes is proprietary, **source-available** software. The code is public so you can check how the app treats your data, and you can install the official releases. You may not copy, modify, redistribute or reuse the code, or use it to train AI models. The full terms are in the [Atomic Notes Source-Available License](LICENSE). Versions published before 28 September 2026 were released under the MIT License.
 
 <div align="center">
   <br />
