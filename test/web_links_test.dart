@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('only https pages open in the browser', () {
     expect(WebLinks.isWeb(WebLinks.support), isTrue);
-    expect(WebLinks.isWeb(' https://www.patreon.com/cw/DevBehindYou '), isTrue);
+    expect(WebLinks.isWeb(' https://example.com/page '), isTrue);
     expect(WebLinks.isWeb('http://example.com'), isFalse, reason: 'no plain http');
     expect(WebLinks.isWeb('/energypage'), isFalse, reason: 'in-app route');
     expect(WebLinks.isWeb('javascript:alert(1)'), isFalse);
