@@ -1,64 +1,82 @@
 <!--
-  REPO SEO (invisible on the rendered README). GitHub builds the repo's search
-  listing and social/link-preview card from repository SETTINGS, not from meta
-  tags in this file. To control them, set these on the repo:
-
-    About > Description:
-      Local-first, privacy-first notes app. Optional per-note cloud sync.
-      No trackers, no ads, no AI. Built with Flutter + Supabase.
-    About > Website:
-      https://devbehindyou.github.io/Project-Atomic-Notes/
-    About > Topics:
-      flutter, supabase, notes-app, local-first, privacy, offline-first,
-      no-tracking, open-source, android, dart, end-to-end-encryption
-    Settings > Social preview:
-      upload Project-Images/For-README/og-banner.png (1200x630; GitHub accepts it).
+  Repository settings (GitHub builds the search listing and link card from these, not from this file):
+    About > Description: Local-first notes app for Android. Syncs to your own Google Drive, optional AES-256-GCM vault. No AI, no ads, no trackers.
+    About > Website:     https://atomic-notes-community.vercel.app
+    About > Topics:      local-first, notes-app, android, flutter, dart, google-drive, end-to-end-encryption,
+                         privacy, offline-first, no-tracking, aes-gcm, argon2, open-source
+    Settings > Social preview: upload Project-Images/README/og-banner.png (1200x630)
 -->
+
 <div align="center">
-  <img src="Project-Images/For-README/hero-banner.svg" alt="Atomic Notes, a local-first notes app with optional cloud sync" width="100%" />
 
-  <p>
-    <a href="#get-the-app"><img alt="Platform" src="https://img.shields.io/badge/platform-Android%20%C2%B7%20iOS-15171B.svg?style=flat-square" /></a>
-    <img alt="Built with" src="https://img.shields.io/badge/built%20with-Flutter%20%C2%B7%20Supabase-3A2FF0.svg?style=flat-square" />
-    <img alt="Version" src="https://img.shields.io/badge/version-2.03.4-15171B.svg?style=flat-square" />
-    <a href="#license"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-3A2FF0.svg?style=flat-square" /></a>
-    <img alt="Status" src="https://img.shields.io/badge/status-reviving%20%E2%86%92%20open%20source%20soon-15171B.svg?style=flat-square" />
-  </p>
+<a href="https://github.com/DevBehindYou/Atomic-Notes-App-V0.2/releases/latest">
+  <img src="Project-Images/README/hero.png" width="100%" alt="Atomic Notes, a local-first notes app for Android that syncs to your own Google Drive. Three phones show the notes grid, the encryption vault and the Atomic Energy screen." />
+</a>
 
-  <strong>Local-first notes. Optional cloud sync. No trackers, no ads, no AI. Your notes are never someone's training data.</strong>
+<h1>Atomic Notes</h1>
+
+<p><b>Your Notes, Your Drive, Always Yours.</b></p>
+
+<p>Local-first notes and checklists for Android. Sync to a folder in your own Google Drive.<br />
+An optional end-to-end vault. No AI, no ads, no trackers.</p>
+
+<p>
+  <a href="https://github.com/DevBehindYou/Atomic-Notes-App-V0.2/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/DevBehindYou/Atomic-Notes-App-V0.2?style=flat-square&label=release&color=3A2FF0" /></a>
+  <img alt="Android 9 or newer" src="https://img.shields.io/badge/Android-9%2B-15171B?style=flat-square&logo=android&logoColor=white" />
+  <img alt="Built with Flutter 3.44.8" src="https://img.shields.io/badge/Flutter-3.44.8-15171B?style=flat-square&logo=flutter&logoColor=white" />
+  <a href="https://github.com/DevBehindYou/Atomic-Notes-App-V0.2/actions/workflows/flutter-ci.yml"><img alt="Flutter CI" src="https://github.com/DevBehindYou/Atomic-Notes-App-V0.2/actions/workflows/flutter-ci.yml/badge.svg" /></a>
+  <img alt="No AI, no ads, no trackers" src="https://img.shields.io/badge/no%20AI%20%C2%B7%20no%20ads%20%C2%B7%20no%20trackers-F4F5F1?style=flat-square&labelColor=F4F5F1&color=F4F5F1" />
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-3A2FF0?style=flat-square" /></a>
+</p>
+
+<p>
+  <a href="https://github.com/DevBehindYou/Atomic-Notes-App-V0.2/releases/latest"><b>Download the APK</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://atomic-notes-community.vercel.app">Website</a>
+  &nbsp;·&nbsp;
+  <a href="#how-atomic-notes-works">How it works</a>
+  &nbsp;·&nbsp;
+  <a href="#faq">FAQ</a>
+</p>
+
 </div>
 
 ---
 
+## What is Atomic Notes?
+
+**Atomic Notes is a free, open-source notes app for Android that keeps your notes on your phone first and syncs them to a private folder in your own Google Drive.** It has no AI features, no ads and no analytics. An optional vault encrypts every note on the device with AES-256-GCM, using a key derived from a 6-word recovery phrase, so the sync server and Google only ever store ciphertext. Version 2.03.4 shipped on 27 September 2026.
+
+### At a glance
+
+| | |
+| :--- | :--- |
+| **What it is** | A local-first app for text notes and checklists |
+| **Platform** | Android 9 (API 28) or newer. APKs for `arm64-v8a`, `armeabi-v7a` and `x86_64` |
+| **Latest version** | 2.03.4 (build 7), released 2026-09-27 on [GitHub Releases](https://github.com/DevBehindYou/Atomic-Notes-App-V0.2/releases/latest) |
+| **Where notes live** | On the device first. When you sync, one file per note goes to a `My-Atomic-Notes` folder in your Google Drive |
+| **Encryption** | Optional vault. Argon2id (64 MiB, 3 passes) turns a 6-word phrase into a key, then AES-256-GCM seals each note |
+| **Sign-in** | Your Google account. The app asks for `drive.file`, so it can only see the files it created |
+| **Price** | Free. Writing notes costs nothing. Cloud sync runs on Atomic Energy, which refills by 20 every 24 hours |
+| **Tracking** | None. No analytics, no crash reporter, no ad SDK |
+| **Source** | This repository, MIT licensed |
+
 ## Contents
 
-* [What this is](#what-this-is)
-* [Why it exists](#why-it-exists)
-* [The problem: your notes became training data](#the-problem-your-notes-became-training-data)
-* [Features](#features)
-* [App interface](#app-interface)
-* [Privacy &amp; Security](#privacy--security)
-* [Under the hood](#under-the-hood)
-* [Design system](#design-system)
-* [Usability](#usability)
-* [Get the app](#get-the-app)
-* [Roadmap](#roadmap)
-* [Tech stack](#tech-stack)
-* [License](#license)
-* [Author](#author)
-
----
-
-## What this is
-
-**Atomic Notes** is a note-taking app built on a simple premise. Your notes should work with zero friction, online or offline, and you should never have to guess what happens to your data.
-
-* **Local-first.** Every note is written to on-device storage the instant you stop typing. The local copy is the source of truth, so the app opens at the same speed on 5G or in airplane mode, and launch never blocks on the network.
-* **Optional, per-note cloud sync.** Sign in once and notes sync across your devices in realtime. One row per note, not a re-uploaded notebook blob.
-* **Notes and checklists, same object.** A checklist is just a note: one data model, one quota, one editor.
-* **The promise.** No subscriptions. No AI. No analytics SDKs. No ad SDKs. No third-party trackers. Nothing in the app is built to monetize the contents of your notes.
-
-> **Source availability.** This repository is the public showcase. The full application source is being held back for now, so its security-sensitive parts can be hardened first. Client-side encryption leads that list, and it's [in active development](#roadmap). Opening the source is planned, not shelved. Until then, this README stays exact about what is and isn't protected today.
+- [Why it exists](#why-it-exists)
+- [The problem: your notes became training data](#the-problem-your-notes-became-training-data)
+- [Features](#features)
+- [Screens](#screens)
+- [How Atomic Notes works](#how-atomic-notes-works)
+- [Security and privacy model](#security-and-privacy-model)
+- [Performance](#performance)
+- [Install and verify](#install-and-verify)
+- [Build from source](#build-from-source)
+- [Tech stack](#tech-stack)
+- [Roadmap](#roadmap)
+- [FAQ](#faq)
+- [Project documents](#project-documents)
+- [Author and license](#author-and-license)
 
 ---
 
@@ -66,23 +84,25 @@
 
 Atomic Notes has an origin story, and it's the reason it's built the way it is.
 
-The developer used a mainstream notes app the way most people do. Ideas, mostly. Also a few account passwords and private notes he never should have typed there. Then one ordinary day the emails started. *"New sign-in from a location you don't usually use."* One account, then another. What followed was a frantic afternoon of password resets, token revocations, and locked-out services.
+The developer used a mainstream notes app the way most people do. Ideas, mostly. Also a few account passwords and private notes he never should have typed there. Then one ordinary day the emails started. *"New sign-in from a location you don't usually use."* One account, then another. What followed was a frantic afternoon of password resets, token revocations and locked-out services.
 
-The lesson wasn't "switch notes apps." It was:
+The lesson wasn't "switch notes apps." It was this:
 
 > **Stop using apps that take your data hostage and use it for their own private, profit-driven ends.**
 
-So Atomic Notes became the app he wished he'd had. Your notes live on *your* device first. The cloud is an option you control. And the business model can never be "mine the contents of your notes."
+So Atomic Notes became the app he wished he'd had. Your notes live on your device first. The cloud is an option you control, and it's your own Google Drive, not a server farm you'll never see. The business model can never be "mine the contents of your notes."
 
-**The revival.** Atomic Notes was first built roughly three years ago. Back then, feasibility and tooling limits meant it couldn't launch the way it deserved, so it got shelved on purpose, with a note-to-self that one day the tech would catch up. It has. With modern tooling and an AI-assisted rebuild, the project is now **revived**: a new UI/UX system, a re-architected sync engine, a full performance pass, and a security-and-privacy-first foundation.
+**The revival.** Atomic Notes was first built about three years ago. Back then, feasibility and tooling limits meant it couldn't launch the way it deserved, so it got shelved on purpose, with a note-to-self that one day the tech would catch up. It has. With modern tooling and an AI-assisted rebuild, the project is back: a new UI system, a rebuilt sync engine that writes to your Drive, a full performance pass, and a security-first foundation with an end-to-end vault.
 
 ---
 
 ## The problem: your notes became training data
 
-The industry quietly changed the deal. Across mainstream productivity and notes apps, "free" now tends to mean **your content is the product**. It gets read, profiled, and more and more often fed into models as training data. Terms-of-service updates now routinely reserve the right to use what you write to "improve services" and "train AI."
+The industry quietly changed the deal. Across mainstream productivity apps, "free" now tends to mean your content is the product. It gets read, profiled and, more and more often, fed into models as training data.
 
-Your notes are the most personal text you produce: half-formed ideas, health details, passwords you shouldn't have put there, drafts you never meant anyone to read. That's not a corpus you should have to donate.
+Two public examples show how fast terms can move under you. In August 2023, Zoom faced a backlash over terms that appeared to allow AI training on customer data, and it added a no-training-without-consent line within days ([TechCrunch](https://techcrunch.com/2023/08/08/zoom-data-mining-for-ai-terms-gdpr-eprivacy/)). In June 2024, Adobe's updated terms said it "may access your content through both automated and manual methods," and a user revolt made it rewrite them ([Adobe](https://blog.adobe.com/en/publish/2024/06/10/updating-adobes-terms-of-use)). Both companies walked the wording back. The lesson stands: the terms can change after you've written your notes.
+
+Your notes are the most personal text you produce. Half-formed ideas, health details, passwords you shouldn't have put there, drafts you never meant anyone to read. That's not a corpus you should have to donate.
 
 **Atomic Notes is designed to be structurally incapable of that model:**
 
@@ -90,262 +110,268 @@ Your notes are the most personal text you produce: half-formed ideas, health det
 | :--- | :--- |
 | Content used to "improve services" and train AI | **No AI in the app. Your notes are never used for training.** |
 | Analytics and crash SDKs profiling behavior | **Zero telemetry. No analytics, no crash reporters.** |
-| Ad SDKs reading context to target you | **No ad SDKs in the app today.** |
-| Cloud-first, so your data lives on their servers by default | **Local-first: your device is the primary copy, cloud is opt-in.** |
-| Account required, content monetized to fund "free" | **Funded (planned) by *optional* rewarded ads that buy sync *speed*, never access to your notes.** |
+| Ad SDKs reading context to target you | **No ad SDKs in the app.** |
+| Cloud-first, so your data lives on their servers by default | **Local-first. Your device holds the main copy, and sync goes to your own Google Drive.** |
+| Your words sit readable on someone else's disk | **Turn on the vault and the server and Google only ever see ciphertext.** |
+| Content monetized to fund "free" | **Funded by optional Atomic Coins that buy sync speed and note capacity, never access to your notes.** |
 
-This isn't a posture bolted on afterward. It's *why* the app is local-first, *why* there's no AI, and *why* the funding model (see the [roadmap](#roadmap)) sells convenience, never your content.
+This isn't a posture bolted on afterward. It's why the app is local-first, why there's no AI, and why the money model sells convenience, never your content. You can check every claim in this table against the code in this repository. The dependency list is in [`pubspec.yaml`](pubspec.yaml).
 
 ---
 
 ## Features
 
-* **Notes and checklists, side by side.** Text notes and to-do checklists are first-class objects of the same type. Both count toward the same 50-note free tier and behave identically.
-* **Instant local save.** Every keystroke settles into on-device Hive storage. There's no "saving…" spinner, and no way to lose work by closing the app or losing signal.
-* **Fully usable offline.** Local storage is the primary copy, not a fallback cache. Launch speed is identical online or off, and startup never waits on the network.
-* **Per-note realtime cloud sync.** Sign in once and changes propagate per note across devices, whether created, edited, pinned, or deleted, with conflict handling that won't clobber unsynced edits.
-* **Pin, filter, and multi-select.** Pin notes to the top. Filter by Newest, Oldest, To-dos, or Notes. Enter selection mode to bulk-delete.
-* **Biometric app lock.** Optional fingerprint or face unlock (`local_auth`) layered *on top of* your account sign-in, gating the app at launch.
-* **A "Database" stats screen.** Plain, honest numbers: notes on device vs. notes in cloud, and the last backup time.
-* **Server-enforced quota.** The 50-note free tier is enforced in Postgres, not merely hidden in the UI. The client cap is advisory, and the real one is authoritative.
+### Notes and checklists that save as you type
 
----
+Text notes and to-do checklists are the same kind of object, so they share one editor, one list and one limit. Every change is written to on-device storage (Hive) as you type. There's no "saving" spinner, and closing the app or losing signal can't lose your work.
 
-## App interface
-
-The UI is the **Technical Editorial** system in practice: ink on paper, interrupted only by a single electric-blue *Signal*. Real screens:
+- Pin notes to the top. Filter by Newest, Oldest, To-dos or Notes.
+- Select several notes at once to delete them in one go.
+- Deleted notes wait in a **Recycle Bin** until you restore them or delete them for good.
+- Clean cards: each card shows only the title and the note. The date lives in the editor.
 
 <div align="center">
 <table>
   <tr>
-    <td align="center" width="33%">
-      <img src="Project-Images/Mockups/atomic-notes-mockup-image-03.png" width="230" alt="Notes grid" /><br />
-      <sub><b>NOTES, masonry grid</b><br />notes + checklists, filters, quota</sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="Project-Images/Mockups/atomic-notes-mockup-image-05.png" width="230" alt="Text note editor" /><br />
-      <sub><b>EDITOR, text note</b><br />distraction-free writing</sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="Project-Images/Mockups/atomic-notes-mockup-image-04.png" width="230" alt="Checklist editor" /><br />
-      <sub><b>EDITOR, checklist</b><br />same object, tick items off</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="33%">
-      <img src="Project-Images/Mockups/atomic-notes-mockup-image-07.png" width="230" alt="Database stats screen" /><br />
-      <sub><b>DATABASE, storage report</b><br />on-device vs. cloud counts</sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="Project-Images/Mockups/atomic-notes-mockup-image-09.png" width="230" alt="Security / biometric lock" /><br />
-      <sub><b>SECURITY, biometric lock</b><br />opt-in device-level gate</sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="Project-Images/Mockups/atomic-notes-mockup-image-08.png" width="230" alt="Cloud sync toggle" /><br />
-      <sub><b>CLOUD SYNC, your switch</b><br />off = notes stay on device</sub>
-    </td>
+    <td align="center" width="33%"><img src="Project-Images/README/screen-notes.png" width="220" alt="Atomic Notes home screen with a masonry grid of notes and checklists and filter chips" /><br /><sub><b>Notes grid</b></sub></td>
+    <td align="center" width="33%"><img src="Project-Images/README/screen-checklist.png" width="220" alt="Atomic Notes checklist editor with ticked and open items" /><br /><sub><b>Checklist editor</b></sub></td>
+    <td align="center" width="33%"><img src="Project-Images/README/screen-editor.png" width="220" alt="Atomic Notes text note editor while typing" /><br /><sub><b>Text editor</b></sub></td>
   </tr>
 </table>
 </div>
 
-<details>
-<summary><b>More screens</b>: settings, selection mode, developer / danger zone</summary>
+### Sync to your own Google Drive
+
+Atomic Notes doesn't keep your notes in its own database. When you sync, each note becomes one `.atomic` file in a `My-Atomic-Notes` folder in **your** Google Drive. The Atomic Notes server keeps only what sync needs to stay in order: note ids, pinned and deleted flags, timestamps and the Drive file id. Titles and text are never written to it.
+
+- **Automatic sync** runs a few seconds after you stop typing, when you return to the app and when the network comes back. It runs at most once an hour. **Sync now** works any time.
+- **Nothing gets lost to a bad connection.** A sync cut off by a closed app or a dropped network finishes on its own later, and you're never charged twice for it. A dropped connection is retried after 5, 15 and 45 seconds.
+- **Edits on two devices don't overwrite each other.** If the same note changed on both, the app keeps your version as a "(conflict copy)" next to the other one.
+- The app asks Google for `drive.file` only. That scope lets it see files it created, and nothing else in your Drive.
+
+### An end-to-end vault, if you want one
+
+The vault is off by default. Turn it on and the app shows you six words. Write them down. From those words, Argon2id (64 MiB of memory, 3 passes) derives a key on your phone, and every note is sealed with AES-256-GCM before it leaves the device. Your Drive and the Atomic Notes server then hold only ciphertext.
+
+- **Lock on this device** forgets the key on that phone. Your notes stay encrypted in the cloud and on your other devices.
+- A new phone asks for the six words once, then unlocks your notes.
+- Notes written while the vault is off or locked are stored as plain text in your Drive. The app converts them to vault notes when you unlock.
+
+### Atomic Energy and Atomic Coins
+
+Writing notes is always free. **Atomic Energy** pays for cloud sync, and it refills on its own.
+
+| Rule | Value |
+| :--- | :--- |
+| Free energy | +20 every 24 hours |
+| Energy cap | 120 |
+| Standard (automatic) sync | 5 energy, at most once an hour |
+| Instant sync | 10 energy, any time |
+| Sync with nothing to upload | Free |
+| Welcome gift | 5 Atomic Coins |
+| 1 Atomic Coin | 40 energy |
+
+If a sync fails and no note gets through, its energy is refunded. Coins can't be bought in the app yet. Coin packs are the next phase on the [roadmap](#roadmap).
 
 <div align="center">
 <table>
   <tr>
-    <td align="center" width="33%">
-      <img src="Project-Images/Mockups/atomic-notes-mockup-image-02.png" width="215" alt="Settings" /><br />
-      <sub><b>SETTINGS</b></sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="Project-Images/Mockups/atomic-notes-mockup-image-06.png" width="215" alt="Selection mode" /><br />
-      <sub><b>SELECT &amp; BULK-DELETE</b></sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="Project-Images/Mockups/atomic-notes-mockup-image-10.png" width="215" alt="Developer options danger zone" /><br />
-      <sub><b>DANGER ZONE</b> (wipe local/cloud)</sub>
-    </td>
+    <td align="center" width="33%"><img src="Project-Images/README/screen-energy.png" width="220" alt="Atomic Energy screen with a 110 of 120 energy bar, coin balance and activity list" /><br /><sub><b>Atomic Energy</b></sub></td>
+    <td align="center" width="33%"><img src="Project-Images/README/screen-convert-coins.png" width="220" alt="Convert Atomic Coins to energy sheet" /><br /><sub><b>Convert coins</b></sub></td>
+    <td align="center" width="33%"><img src="Project-Images/README/screen-energy-popup.png" width="220" alt="Energy and coins popup opened from the home screen" /><br /><sub><b>Quick look from home</b></sub></td>
   </tr>
 </table>
 </div>
-</details>
+
+### Note capacity tiers
+
+Every account starts on **Tachyon** with room for 30 notes. Checklists count the same as notes. Moving up a tier is a one-time spend of coins. The Server enforces the limit as well as the app.
+
+<div align="center">
+  <img src="Project-Images/README/tiers.png" width="100%" alt="Note capacity tiers in Atomic Notes: Tachyon 30 notes free, Antimatter 40 notes for 10 coins, Monopole 50 notes for 20 coins, Strangelet 100 notes for 30 coins" />
+</div>
+
+| Tier | Notes | Cost to reach it |
+| :--- | ---: | :--- |
+| Tachyon | 30 | Free, the starting tier |
+| Antimatter | 40 | 10 coins |
+| Monopole | 50 | 20 coins |
+| Strangelet | 100 | 30 coins |
+
+### Locks for the phone in your hand
+
+- **Biometric lock.** Fingerprint or face unlock guards the app at launch, on top of your Google sign-in.
+- **Two-step verification.** Scan a QR code into any authenticator app, and the app asks for a 6-digit code before it opens.
+- **No screenshots.** The app blocks screenshots and screen recording of its own screens (Android `FLAG_SECURE`).
+- Your session and vault key are kept in Android's secure storage, not in plain app files.
+
+### A notification center, and Atomi
+
+- The bell collects messages from the Atomic Notes team: new releases, maintenance and feature news. Tap a message to mark it read, or dismiss it. Pinned notices stay until they're resolved.
+- **Atomi**, the dot-grid mascot on the home screen, tells you whether everything is synced and when the next automatic sync runs.
+
+<div align="center">
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="Project-Images/README/screen-notifications.png" width="220" alt="Atomic Notes notification center with two team messages" /><br /><sub><b>Notification center</b></sub></td>
+    <td align="center" width="33%"><img src="assets/Atomic%20Icons/dotgrid-blink-transparent.gif" width="170" alt="Atomi, the blinking dot-grid mascot of Atomic Notes" /><br /><sub><b>Atomi</b></sub></td>
+    <td align="center" width="33%"><img src="Project-Images/README/screen-security.png" width="220" alt="Atomic Notes security screen with the biometric unlock switch" /><br /><sub><b>Biometric lock</b></sub></td>
+  </tr>
+</table>
+</div>
+
+### Your data, your switches
+
+- **Cloud sync** can be turned off. Your notes then stay on the phone only.
+- **Cloud notes** shows what is in your Drive and what is only on the device.
+- **Danger Zone** wipes the notes on this device, or the copies in the cloud, separately. A cloud wipe doesn't touch the notes on your phone.
+- Pick a profile picture from 14 pixel-art avatars. No photo upload needed.
 
 ---
 
-## Privacy &amp; Security
+## Screens
 
-Precision matters more here than sounding impressive. This section is deliberately exact. For the full, plain-language data-handling disclosure, see [TRANSPARENCY.md](TRANSPARENCY.md).
+<div align="center">
+<table>
+  <tr>
+    <td align="center" width="25%"><img src="Project-Images/README/screen-encryption.png" width="190" alt="Encryption screen showing the vault is on" /><br /><sub><b>Encryption vault</b></sub></td>
+    <td align="center" width="25%"><img src="Project-Images/README/screen-cloud-sync.png" width="190" alt="Cloud sync switch" /><br /><sub><b>Cloud sync switch</b></sub></td>
+    <td align="center" width="25%"><img src="Project-Images/README/screen-database.png" width="190" alt="Storage report with notes on the device and in the cloud" /><br /><sub><b>Device and cloud counts</b></sub></td>
+    <td align="center" width="25%"><img src="Project-Images/README/screen-danger-zone.png" width="190" alt="Danger Zone with separate local and cloud wipe actions" /><br /><sub><b>Danger Zone</b></sub></td>
+  </tr>
+</table>
+</div>
 
-**What is protected today**
-
-* **In transit:** all backend traffic is over **HTTPS/TLS**.
-* **Access control at rest:** cloud data is scoped by **Supabase Row-Level Security (RLS)**. Every table policy is `auth.uid() = user_id`, so your signed-in account is the only one that can read or write your rows.
-* **No tracking, full stop:** zero telemetry. No analytics SDK, no crash reporter, no ad SDK, no third-party trackers shipped in the app.
-* **No AI:** nothing sends your notes to a model, and none of your content is used for training. The app has no AI feature to send it to.
-* **Optional device lock:** biometric unlock can gate the app locally, independent of the account session.
-
-**What is not protected *yet*, stated plainly**
-
-* **Notes are not end-to-end encrypted today.** Note content sits as ordinary text in your account's row. Transport encryption and access control (above) protect it, plus the platform's at-rest disk encryption, but not in a form the operator couldn't read. Access control and cryptography aren't the same thing, and this README won't pretend otherwise.
-* **Local storage is not encrypted at rest** on the device today.
-
-> 🔐 **Client-side end-to-end encryption is in active development and targeted for the next release.** It's the top priority, and the prerequisite for opening the source. See [how it's being built](#encryption-in-active-development) below and the [roadmap](#roadmap). Being exact about this now is the point: an app built in reaction to a data breach doesn't get to overclaim security.
+The screens use the **Technical Editorial** design system: ink `#15171B` on paper `#F4F5F1`, with one accent, Signal `#3A2FF0`. Headings are Bebas Neue, body text is Hanken Grotesk and data is JetBrains Mono. The fonts ship inside the app, so it looks right with no network. Some screenshots come from the August 2026 build, so small details (like the dates on note cards) differ from 2.03.4.
 
 ---
 
-## Under the hood
+## How Atomic Notes works
 
-A short tour of the parts that make the app trustworthy, and not merely marketed as such.
+The phone is the source of truth. The server is a thin coordinator that checks your energy, keeps the sync order and writes files to **your** Drive. It never stores note text.
 
-### Architecture
-
-```
-┌──────────────────────────────────────────────┐
-│                   UI  (Flutter)               │
-│   lib/page/**   +   lib/utility/component/**   │
-└───────────────────────┬──────────────────────┘
-                        │  listens to
-┌───────────────────────▼──────────────────────┐
-│   NotesRepository  (single source of truth)   │
-│   ChangeNotifier · in-memory index · sync     │
-└───────┬───────────────────────────────┬──────┘
-        │ instant                        │ optional, per-note
-        ▼                                ▼
-┌───────────────┐              ┌─────────────────────┐
-│  Hive CE       │  ◀ realtime ▶ │  Supabase Postgres  │
-│  on-device     │              │  RLS · triggers ·   │
-│  (source copy) │              │  realtime           │
-└───────────────┘              └─────────────────────┘
+```mermaid
+flowchart LR
+  subgraph Phone["Your phone"]
+    UI["Flutter UI<br/>(bloc)"] --> Repo["NotesRepository"]
+    Repo --> Hive[("Hive<br/>on-device copy")]
+    Repo --> Vault["Vault<br/>Argon2id + AES-256-GCM"]
+  end
+  Repo -- "HTTPS, Google sign-in" --> API["Atomic Notes Server<br/>Hono on Vercel"]
+  API --> Mongo[("MongoDB Atlas<br/>metadata, energy ledger")]
+  API -- "drive.file scope" --> Drive[("Your Google Drive<br/>My-Atomic-Notes/*.atomic")]
 ```
 
-### Local-first by construction
+**One sync, step by step:**
 
-Boot initializes the backend with a **bounded timeout** and, if it fails, shows a real error screen instead of vanishing:
-
-```dart
-// lib/main.dart : startup can time out, but it can never silently die.
-await Supabase.initialize(url: cred.PROJECT_URL, publishableKey: cred.API_KEY)
-    .timeout(const Duration(seconds: 15));
-await Hive.initFlutter();
-await NotesRepository.instance.init();   // loads the local copy first
-// on failure: runApp(StartupFailedApp(error)). never exit(0)
+```mermaid
+sequenceDiagram
+  participant App as App (your phone)
+  participant S as Atomic Notes Server
+  participant D as Your Google Drive
+  App->>App: Save to Hive as you type, mark the note unsynced
+  App->>S: Push changed notes (with a request id)
+  S->>S: Check energy and take one charge, lock this user's sync
+  S->>D: Write up to 8 note files at a time, retry rate limits
+  S->>S: Commit metadata and a sync sequence number in one transaction
+  S-->>App: Results per note (full refund if none got through)
+  App->>S: Pull anything newer than the last sequence number
+  S->>D: Read changed files, 10 per page
+  S-->>App: Notes from your other devices
 ```
 
-### A sync engine that respects your edits
+If the app dies between "push" and "results", the next launch sends the same request id. The server replays the stored result instead of charging again.
 
-Sync is **per-note, last-write-wins on a server-authoritative timestamp**, with tombstones for deletes and an offline queue that flushes on reconnect. A background pull can never overwrite a local edit you haven't pushed yet:
+### What each party can see
 
-```dart
-// lib/database/notes_repository.dart : merge, without clobbering unsynced work
-if (local.dirty && local.updatedAt.isAfter(remote.updatedAt)) continue;
-if (remote.updatedAt.isAfter(local.updatedAt)) {
-  _notes[remote.id] = remote;              // remote is newer, take it
-  unawaited(_box.put(remote.id, remote.toMap()));
-}
-```
-
-The `updated_at` used for that comparison is set by **Postgres**, not the client. So a device with a wrong clock can't win a conflict with a bogus future timestamp:
-
-```sql
--- supabase/migrations/002_per_note_realtime.sql
-create trigger note_touch_updated_at
-  before insert or update on public.note
-  for each row execute function public.touch_updated_at();  -- new.updated_at = now()
-```
-
-### Limits enforced where they actually count
-
-The 50-note free tier is a client-side hint *and* a server-side rule. Anyone with the anon key could otherwise `curl` in note #51:
-
-```sql
--- supabase/migrations/003_note_limit.sql
-if live >= allowance then
-  raise exception 'note_limit_reached' using errcode = 'check_violation';
-end if;
-```
-
-The allowance is stored **per user**, so the (planned) funding system can raise a cap with one `UPDATE` instead of an app release. The groundwork is laid, and honestly labeled as groundwork.
-
-### Encryption (in active development)
-
-The next release closes the one real gap in [Privacy &amp; Security](#privacy--security). The approach being built: derive a key from the user's credentials on-device, then encrypt note content with **AES-256-GCM** *before* it ever leaves the device. The server, and anyone who ever reaches it, then stores only ciphertext.
-
-```dart
-// DESIGN: the client-side encryption being built for the next release.
-// Notes are sealed on-device. Only ciphertext + nonce are ever synced.
-import 'package:cryptography/cryptography.dart';
-
-final algorithm = AesGcm.with256bits();
-
-Future<SecretBox> sealNote(String plaintext, SecretKey key) =>
-    algorithm.encrypt(utf8.encode(plaintext), secretKey: key);
-
-// key = Argon2id( passphrase, per-user salt ).  Derived locally, never uploaded.
-// server row stores only: { nonce, ciphertext, mac }.  Unreadable server-side.
-```
-
-*This snippet is the design under construction, not a claim that encryption ships today.*
-
----
-
-## Design system
-
-The UI follows a strict system called **Technical Editorial**: condensed uppercase headings, hairline rules instead of shadows, and disciplined restraint on color. The one "shadow" in the whole app is a solid 2px zero-blur offset that mimics offset print.
-
-| Token | Hex | Role |
+| | Vault off | Vault on |
 | :--- | :--- | :--- |
-| **Ink** | `#15171B` | Type, borders, inverted blocks |
-| **Paper** | `#F4F5F1` | The canvas, a warm off-white |
-| **Signal** | `#3A2FF0` | Sync, active states, focus. The *only* accent. |
-
-**Type:** `Bebas Neue` (condensed uppercase headings) · `Hanken Grotesk` (body) · `JetBrains Mono` (metadata, counts, "system status" voice). Fonts are **bundled**, not fetched at runtime. A local-first app has to render correctly with no network.
-
-**Structure:** 8px spacing base · 4px radii (12px only for data chips) · 1.5px hairline strokes · depth from tonal layering, never blur.
+| **Your phone** | Everything | Everything, after unlock |
+| **Your Google Drive** | Note titles and text | Ciphertext only |
+| **Atomic Notes server** | Passes note text through to Drive in transit. Stores metadata only | Ciphertext in transit. Stores metadata only |
+| **Atomic Notes team** | No access to your Drive files | No access, and no key |
 
 ---
 
-## Usability
+## Security and privacy model
 
-* **One sign-in, then it's yours.** An active session is required once to get past the splash screen. After that the session persists across launches, with no re-login every time.
-* **A short walkthrough, once.** New users get a brief onboarding carousel that disappears for good once completed.
-* **Lock-screen priority.** If biometric lock is enabled, it takes precedence over everything else at launch, so it can't be accidentally bypassed.
-* **Instant everywhere.** Local save and app launch are instant and unconditional, regardless of network, sync state, or plan.
+What protects your notes today, stated exactly:
+
+- **In transit:** every call to the server uses HTTPS.
+- **At rest in the cloud:** notes sit in your own Google Drive under your Google account's security. With the vault on, they're AES-256-GCM ciphertext there too.
+- **Key handling:** the vault key comes from your six words through Argon2id on the phone. The words and the key never leave the device. Lose the words, and no one can recover vault notes. That's the point of end-to-end encryption.
+- **Least privilege:** the `drive.file` scope limits the app to files it made. Server-side Google tokens are encrypted before they're stored.
+- **On the device:** biometric lock, two-step verification, blocked screenshots and secure storage for secrets.
+- **No telemetry:** no analytics, crash reporting or ad SDKs in [`pubspec.yaml`](pubspec.yaml). No AI feature exists to send notes to.
+
+What isn't protected, so you can decide for yourself:
+
+- With the vault **off**, your notes are plain text in your Drive, and they pass through the server as plain text on the way there.
+- Hive storage on the phone isn't encrypted by the app. It relies on Android's own device encryption.
+- The Google OAuth consent screen is still in testing, so Google limits sign-in to test users. Publishing it is on the [roadmap](#roadmap).
+
+The full plain-language disclosure is in [TRANSPARENCY.md](TRANSPARENCY.md).
 
 ---
 
-## Get the app
+## Performance
 
-* **Android:** prebuilt releases are distributed via the [GitHub Releases](../../releases) page.
-* **iOS:** planned. An unsigned iOS build already compiles in CI.
-* **Google Play:** no Play Store listing is planned. The one-time Play Console fee is a real barrier for a solo, no-budget project, and GitHub-first distribution fits the open-source direction.
-* **Future channels:** an **Amazon Appstore** listing is planned *strictly* to satisfy a future rewarded-ads eligibility requirement (not a primary discovery channel). **F-Droid** may follow as a separate ad-free build flavor.
+Measured on a real Android phone against production on 27 September 2026 (server time, single samples):
+
+| Operation | Time |
+| :--- | ---: |
+| Push 9 notes to Drive | 3.2 s |
+| Push 22 notes to Drive (8 files in flight) | 6.8 s |
+| Push 1 note | 1.6 s |
+| App cold start after a force stop | 0.5 to 0.9 s |
+| First launch after install | 3.4 s |
+
+Most of a push is Google Drive's own write time, about 1.5 s per file. The server writes eight files at a time, which cut a push of about 22 notes from 8.9 s to 6.8 s.
 
 ---
 
-## Roadmap
+## Install and verify
 
-*This roadmap tracks active development. Items get checked off as they ship to production.*
+1. Open the [latest release](https://github.com/DevBehindYou/Atomic-Notes-App-V0.2/releases/latest).
+2. Download the APK for your phone. Most phones need the file ending in **`arm64-v8a.apk`**. Older 32-bit phones need `armeabi-v7a`, and emulators need `x86_64`.
+3. Open the file and allow installs from your browser or file manager when Android asks.
 
-- [ ] **Client-side encryption. _In active development, shipping next release._** Encrypt note content on-device with a credential-derived key (AES-256-GCM) so notes are unreadable to anyone but the account holder, at rest both in local storage and in the cloud. This is the prerequisite for opening the source.
-- [ ] **Publish source code.** Open the repository to public read access (and potentially community contributions) once the encryption and security hardening are integrated.
-- [ ] **Amazon Appstore listing &amp; developer verification.**
-    - **Verification:** register for Android Developer Verification via the low-friction path to get ahead of Google's expanding requirements for sideloaded apps.
-    - **Listing:** publish on the Amazon Appstore. Google AdMob requires an app be listed in a recognized store before it's eligible to serve ads.
-- [ ] **The Atomic Coin system (CONCEPT, NOT LIVE):**
-    <div align="center">
-      <img src="Project-Images/For-README/atomic-coin-flow.svg" alt="Roadmap concept, not live: the planned Atomic Coin funding flow" width="100%" />
-    </div>
+Version 2.03.4 installs over 1.18.2 and keeps your notes. Both use the same package name (`com.notes.atomic`) and the same signing key.
 
-    A gamified, opt-in ad economy to fund cloud infrastructure *without* subscriptions:
-    - **The mechanic:** watch 1 rewarded ad → 3 particles (1 electron + 1 proton + 1 neutron). 3 particles form 1 **Atom**. 3 Atoms mint 1 **Atomic Coin**.
-    - **The utility:** spend 1 Atomic Coin to unlock 1 instant / on-demand cloud sync.
-    - **The guarantee:** a free, unmetered periodic background sync stays free for everyone. Coins only ever buy speed and convenience. They never buy the guarantee that a note is saved and synced, and never access to your data.
-    - **Anti-fraud:** a server-authoritative coin ledger in Supabase, plus AdMob Server-Side Verification (SSV), so ad completions are verified by the server, not trusted from the client.
-- [ ] **Alternative funding channels.** GitHub Sponsors / Ko-fi / Open Collective. A parallel, no-ads-required way to support the project directly.
-- [ ] **Task &amp; reminder notifications.** Local notifications for checklists and reminders, once the core sync engine and coin economy are stable.
+**Check the signature before you install.** Every release is signed with the Atomic Notes release key:
 
-> **Explicitly *not* on the roadmap:** AI features and paid subscriptions. Both got evaluated in an earlier proposal, then **rejected**. They push the app toward the exact data-hungry, business-first model Atomic Notes exists to avoid.
+```text
+Certificate SHA-256: cc24ae5ce1dca50fcd5e5c4c252d69e4965c55a975bd0e4739e8938fad9bebeb
+Certificate SHA-1:   20:08:8F:BF:45:D7:D1:5A:4C:26:69:D6:47:84:16:E2:7F:32:85:45
+```
+
+```bash
+apksigner verify --print-certs atomic-notes-2.03.4-arm64-v8a.apk
+```
+
+Each release page also lists the SHA-256 of every APK file and the GitHub Actions run that built it.
+
+---
+
+## Build from source
+
+The release APKs are built by GitHub Actions ([`release-android.yml`](.github/workflows/release-android.yml)) with Flutter 3.44.8. To build your own:
+
+```bash
+git clone https://github.com/DevBehindYou/Atomic-Notes-App-V0.2.git
+cd Atomic-Notes-App-V0.2
+cp lib/authentication/auth_services/cred.example.dart lib/authentication/auth_services/cred.dart
+flutter pub get
+flutter test
+```
+
+```bash
+flutter build apk --release --split-per-abi \
+  --dart-define=API_BASE_URL=https://your-server.example/api \
+  --dart-define=GOOGLE_SERVER_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
+```
+
+You need your own Atomic Notes Server and a Google Cloud OAuth client for sign-in and Drive. [CI.md](CI.md) covers the workflows and [TESTING.md](TESTING.md) covers the test suites.
 
 ---
 
@@ -353,35 +379,96 @@ The UI follows a strict system called **Technical Editorial**: condensed upperca
 
 | Layer | Technology |
 | :--- | :--- |
-| Client | Flutter (Dart ≥ 3.3) |
-| Local storage | Hive CE (`hive_ce` / `hive_ce_flutter`) |
-| Backend | Supabase: Postgres + Auth + Row-Level Security + Realtime |
-| Auth | Supabase email/password + on-device biometric lock (`local_auth`) |
-| Sync | Per-note rows, realtime stream, server-authoritative `updated_at`, tombstones |
-| Targets | Android (primary) · iOS · plus Flutter desktop/web scaffolding |
+| App | Flutter 3.44.8, Dart 3, `bloc` / `flutter_bloc` for state |
+| Local storage | Hive CE (`hive_ce`, `hive_ce_flutter`) |
+| Sign-in | `google_sign_in` with the `openid`, `email`, `profile` and `drive.file` scopes |
+| Encryption | `cryptography` (Argon2id, AES-256-GCM), `flutter_secure_storage` |
+| Device security | `local_auth` (biometrics), TOTP two-step codes, `FLAG_SECURE` |
+| Server | Hono (TypeScript) on Vercel, MongoDB Atlas, Google Drive API |
+| Website | Next.js 15 ([Atomic Notes Community](https://atomic-notes-community.vercel.app)) |
+| Releases | GitHub Actions, split-ABI APKs signed with the release key |
 
 ---
 
-## License
+## Roadmap
 
-**MIT.** See [`LICENSE`](LICENSE). (Takes practical effect once the source is published.)
+*Updated 28 September 2026.*
+
+- [x] Local-first notes and checklists, offline by default
+- [x] Sync to the user's own Google Drive, with replay-safe pushes
+- [x] End-to-end vault (6-word phrase, Argon2id, AES-256-GCM)
+- [x] Atomic Energy, Atomic Coins and note capacity tiers
+- [x] Notification center and team announcements
+- [x] Biometric lock, two-step verification and blocked screenshots
+- [ ] Publish the Google OAuth consent screen, so anyone can sign in
+- [ ] Coin packs you can buy, for faster sync and more notes
+- [ ] Buttons in notifications that open web links
+- [ ] Background sync while the app is closed
+- [ ] iOS build
+
+> **Not on the roadmap:** AI features and paid subscriptions. Both were considered and rejected. They pull the app toward the data-hungry model Atomic Notes exists to avoid.
 
 ---
 
-## Author
+## FAQ
 
-Built by **DevBehindYou** (Ashutosh Sharma). Web development, SEO, and applied AI.
+### Is Atomic Notes free?
 
-* Portfolio: [devbehindyou.vercel.app](https://devbehindyou.vercel.app)
-* GitHub: [@DevBehindYou](https://github.com/DevBehindYou)
-* Medium: [@devbehindyou](https://medium.com/@devbehindyou)
-* X: [@devbehindyou](https://x.com/devbehindyou)
+Yes. Writing and keeping notes on your phone is free with no limit on time, and every account can hold 30 notes at no cost. Cloud sync uses Atomic Energy, which refills by 20 every 24 hours. That covers four standard syncs a day. Atomic Coins add more energy or note capacity. There are no subscriptions.
+
+### Where does Atomic Notes store my notes?
+
+On your phone first, in on-device Hive storage. When you sync, each note is saved as its own `.atomic` file in a `My-Atomic-Notes` folder in your Google Drive. The Atomic Notes server stores only metadata such as note ids, timestamps and flags. It never stores your note titles or text.
+
+### Can the developer read my notes?
+
+Not with the vault on. The vault encrypts each note on your phone with AES-256-GCM before it's uploaded, so your Drive and the server hold only ciphertext, and the key never leaves your device. With the vault off, notes are plain text in your own Drive, and they pass through the server on the way there.
+
+### Does Atomic Notes use AI or train models on my notes?
+
+No. Atomic Notes has no AI features, and your notes are never sent to a model or used as training data. The app ships no analytics, crash-reporting or advertising SDKs. You can check this in the public source code and in the dependency list in `pubspec.yaml`, which is the full list of libraries the app uses.
+
+### Does Atomic Notes work offline?
+
+Yes. The app opens and saves notes the same way with or without a connection, because the phone holds the main copy. Changes made offline sync on their own when the network comes back. You need a connection only for the first Google sign-in and for syncing to Drive.
+
+### What happens if I lose my 6-word recovery phrase?
+
+Notes on a phone that is still unlocked stay readable there. But no one, including the developer, can decrypt your vault notes on a new device without the six words, because the key is derived from them on your phone and never uploaded. Write the phrase down on paper and keep it somewhere safe.
+
+### Is Atomic Notes on Google Play or iOS?
+
+Not yet. Atomic Notes for Android ships as signed APKs on GitHub Releases, and you can check each file's certificate and SHA-256 before installing. An iOS build is on the roadmap.
+
+---
+
+## Project documents
+
+| Document | What it covers |
+| :--- | :--- |
+| [TRANSPARENCY.md](TRANSPARENCY.md) | What the app collects, where notes live and what is protected |
+| [DESIGN-NOTES.md](DESIGN-NOTES.md) | The Technical Editorial design system |
+| [STATE-MANAGEMENT.md](STATE-MANAGEMENT.md) | How bloc and cubits drive the screens |
+| [TESTING.md](TESTING.md) | Unit, widget and bloc tests |
+| [CI.md](CI.md) | The CI and release workflows |
+| [PROGRESS.md](PROGRESS.md) | Build history and version notes |
+
+---
+
+## Author and license
+
+Built by **DevBehindYou** (Ashutosh Sharma), who also runs the sync server and the community site.
+
+- Portfolio: [devbehindyou.vercel.app](https://devbehindyou.vercel.app)
+- GitHub: [@DevBehindYou](https://github.com/DevBehindYou)
+- Medium: [@devbehindyou](https://medium.com/@devbehindyou)
+- X: [@devbehindyou](https://x.com/devbehindyou)
+
+Atomic Notes is released under the [MIT License](LICENSE).
 
 <div align="center">
-  <sub>Atomic Notes. Local-first · no tracking · no ads · your notes are yours.</sub>
+  <br />
+  <img src="assets/icon.png" width="56" alt="Atomic Notes app icon" />
+  <br />
+  <sub><b>ATOMIC NOTES</b> · Your Notes, Your Drive, Local First.</sub>
 </div>
-
-## Hosted verification
-
-See [CI.md](CI.md) for the standalone Flutter verification workflow and the
-separate, optional GitHub Pages showcase setup.
