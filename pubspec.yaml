@@ -71,6 +71,9 @@ dependencies:
   # Two-factor setup: the QR code an authenticator app scans.
   qr_flutter: ^4.1.0
 
+  # Opens https links (notification buttons, the support page) in the phone's browser.
+  url_launcher: ^6.3.2
+
 
 
 dev_dependencies:
