@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:atomic_notes/api/atomic_notes_api.dart';
 import 'package:atomic_notes/database/energy_models.dart';
 import 'package:atomic_notes/database/energy_service.dart';
 import 'package:atomic_notes/database/energy_store.dart';
@@ -13,6 +14,7 @@ import 'package:atomic_notes/utility/component/energy_bar.dart';
 import 'package:atomic_notes/utility/component/logout_dialogbox.dart';
 import 'package:atomic_notes/utility/component/my_appbar.dart';
 import 'package:atomic_notes/utility/component/my_snackbar.dart';
+import 'package:atomic_notes/utility/web_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -118,38 +120,74 @@ class _EnergyViewState extends State<_EnergyView> {
     ).showMySnackBar(context);
   }
 
-  void _buySoon() {
+  /// Coins aren't sold in the App yet. The sheet sends people to the website,
+  /// where supporting the project on Patreon earns Atomic Coins early.
+  void _coinStore() {
+    final email = ApiClient.instance.currentUserEmail;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.paper,
       showDragHandle: true,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(
-            AppSpace.lg, 0, AppSpace.lg, AppSpace.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const MonoLabel('COIN STORE', color: AppColors.signal),
-            const SizedBox(height: AppSpace.sm),
-            const HairRule(color: AppColors.ink),
-            const SizedBox(height: AppSpace.md),
-            const EditorialHeading('Buying coins is\ncoming soon.',
-                style: AppType.headlineLg),
-            const SizedBox(height: AppSpace.sm),
-            const Text(
-              'Atomic Coin purchases need the payment backend (Lemon Squeezy '
-              'and Razorpay), which is the next phase. Until it ships, coins '
-              'are not sold in-app. The first pack is planned as 50 Atomic Coins '
-              'for \$3.99. You can support the build on Patreon.',
-              style: AppType.bodyMd,
-            ),
-            const SizedBox(height: AppSpace.lg),
-            InkActionButton(
-              label: 'Got it',
-              onTap: () => Navigator.of(ctx).pop(),
-            ),
-          ],
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpace.lg, 0, AppSpace.lg, AppSpace.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const MonoLabel('COIN STORE', color: AppColors.signal),
+              const SizedBox(height: AppSpace.sm),
+              const HairRule(color: AppColors.ink),
+              const SizedBox(height: AppSpace.md),
+              const EditorialHeading('Get Atomic Coins\nearly.',
+                  style: AppType.headlineLg),
+              const SizedBox(height: AppSpace.sm),
+              const Text(
+                "Coins aren't sold in the app yet. Support Atomic Notes on "
+                'Patreon at the amount you choose, and the developer sends '
+                'Atomic Coins to your account as an early-supporter reward.',
+                style: AppType.bodyMd,
+              ),
+              if (email != null && email.isNotEmpty) ...[
+                const SizedBox(height: AppSpace.md),
+                const MonoLabel('YOUR ACCOUNT EMAIL'),
+                const SizedBox(height: AppSpace.xs),
+                SelectableText(email,
+                    style: AppType.bodyMd.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: AppSpace.xs),
+                const Text(
+                  'Send this exact email to the developer in a Patreon '
+                  'message, so the coins reach the right account.',
+                  style: AppType.bodySm,
+                ),
+              ],
+              const SizedBox(height: AppSpace.lg),
+              InkActionButton(
+                label: 'Support on Patreon',
+                signal: true,
+                icon: Icons.open_in_new,
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  final opened = await WebLinks.open(WebLinks.support);
+                  if (!mounted) return;
+                  if (!opened) {
+                    const MySnackBar(
+                      text: "Couldn't open the browser. Visit "
+                          '${WebLinks.support}',
+                      sec: 4000,
+                    ).showMySnackBar(context);
+                  }
+                },
+              ),
+              const SizedBox(height: AppSpace.sm),
+              GhostButton(
+                label: 'Not now',
+                onTap: () => Navigator.of(ctx).pop(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -278,10 +316,10 @@ class _EnergyViewState extends State<_EnergyView> {
           ),
           const SizedBox(height: AppSpace.md),
           InkActionButton(
-            label: 'Buy Atomic Coins',
+            label: 'Get Atomic Coins',
             signal: true,
             icon: Icons.add,
-            onTap: _buySoon,
+            onTap: _coinStore,
           ),
           const SizedBox(height: AppSpace.sm),
           GhostButton(

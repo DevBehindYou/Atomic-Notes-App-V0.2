@@ -36,4 +36,12 @@
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
+    <!-- Android 11+ package visibility: lets url_launcher find a browser for https links
+         (notification buttons and the support page). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
 </manifest>

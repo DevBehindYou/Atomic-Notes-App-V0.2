@@ -7,6 +7,7 @@ import 'package:atomic_notes/theme/editorial.dart';
 import 'package:atomic_notes/utility/component/atomic_icon.dart';
 import 'package:atomic_notes/utility/component/my_appbar.dart';
 import 'package:atomic_notes/utility/component/my_snackbar.dart';
+import 'package:atomic_notes/utility/web_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -28,19 +29,27 @@ class _NotificationsPageState extends State<NotificationsPage> {
     service.refresh();
   }
 
-  void _onAction(AppNotification n) {
+  Future<void> _onAction(AppNotification n) async {
     service.markRead(n.id);
     final url = n.actionUrl ?? '';
-    // In-app destinations we can actually open today. Web destinations
-    // (Atomic Community, status page) arrive with that platform.
+    // In-app destinations, then https pages, which open in the browser.
     if (url == '/energypage' || url == '/atomic-energy' || url == '/energy') {
       Navigator.pushNamed(context, '/energypage');
-    } else {
-      const MySnackBar(
-        text: 'Opens in Atomic Community (coming soon).',
-        sec: 2000,
-      ).showMySnackBar(context);
+      return;
     }
+    if (WebLinks.isWeb(url)) {
+      final opened = await WebLinks.open(url);
+      if (!mounted || opened) return;
+      const MySnackBar(
+        text: "Couldn't open the link. Check that a browser is installed.",
+        sec: 2500,
+      ).showMySnackBar(context);
+      return;
+    }
+    const MySnackBar(
+      text: 'Update Atomic Notes to open this.',
+      sec: 2000,
+    ).showMySnackBar(context);
   }
 
   @override
