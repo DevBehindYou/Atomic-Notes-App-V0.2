@@ -44,9 +44,9 @@ Atomic Notes has no AI features. Your notes are never sent to a model and never 
 
 Cloud sync runs on Atomic Energy, which refills for free every day. Atomic Coins add more energy or more note capacity. Coins buy speed and room, never access to your notes. The project will never sell your data, and it's built so that there's nothing to sell.
 
-## Open source
+## Source available
 
-The full app source is in this repository under the MIT License. Anyone can read what the app does instead of taking this page on faith.
+The full app source is public in this repository, so anyone can read what the app does instead of taking this page on faith. The code is proprietary, not open source: the [license](LICENSE) lets you read it, build it to check it against the official release, and report security issues, but not copy or reuse it.
 
 ## How to hold us to this
 
