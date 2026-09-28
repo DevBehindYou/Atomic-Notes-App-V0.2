@@ -1,42 +1,63 @@
 # Transparency
 
-Atomic Notes exists because a data breach taught its developer a hard lesson: most apps will not tell you plainly what happens to your data. This page does. It describes, in plain language, how Atomic Notes handles your notes today, what is protected, what is not protected yet, and where the project is headed. If any of this ever stops being accurate, treat it as a bug and tell us.
+Atomic Notes exists because a data breach taught its developer a hard lesson: most apps won't tell you plainly what happens to your data. This page does. It describes how Atomic Notes 2.03.4 handles your notes, what is protected, what isn't, and how to check it yourself. If any of this ever stops being accurate, treat it as a bug and report it.
 
 ## What we collect
 
-Almost nothing. Atomic Notes ships no analytics, no crash reporters, no advertising SDKs, and no third-party trackers. It does not build a profile of you, and it does not measure how you use the app. The only data it handles is the data you create (your notes and checklists) and the minimum needed to run an account: an email address, and a display name if you choose to sign in for cloud sync.
+Almost nothing. Atomic Notes ships no analytics, no crash reporter, no advertising SDK and no third-party trackers. It doesn't build a profile of you or measure how you use the app.
+
+To run your account, the Atomic Notes server keeps:
+
+- your Google account id, email address and display name, from Google sign-in, and the username you pick
+- your energy and coin balances and a ledger of how they changed
+- metadata for each note: its id, whether it's a note or a checklist, the pinned and deleted flags, timestamps, and the id of its file in your Google Drive
+- an encrypted Google token, so the server can write your note files to your Drive
+- a short log of account and security events, such as sign-ins
+- which team announcements you have read or dismissed
+
+It doesn't keep your note titles, note text or checklist items. Those live on your phone and in your own Drive.
 
 ## Where your notes live
 
-Your notes live on your device first. Atomic Notes is local-first: every note is written to on-device storage the moment you stop typing, and the app opens and works whether or not you have a connection. Cloud sync is optional. When you turn it on, your notes are copied to your own private rows so they can reach your other devices. When you turn it off, your notes stay on the device only. You can see the split any time on the in-app Database screen, which shows how many notes are on the device versus in the cloud.
+On your phone first. Atomic Notes is local-first: every note is saved to on-device storage as you type, and the app works the same with or without a connection.
 
-## What is protected today
+When you sync, each note is saved as its own `.atomic` file in a `My-Atomic-Notes` folder in your Google Drive. The app asks Google for the `drive.file` scope, which lets it see only the files it created. You can turn cloud sync off, and your notes then stay on the phone only.
 
-* Traffic between the app and the backend uses HTTPS/TLS.
-* Cloud data is scoped by row-level access control. Every rule ties a row to its owner, so your signed-in account is the only one that can read or write your notes.
-* There is no telemetry, no ad SDK, and no AI feature, so your notes are never profiled, targeted, or used to train a model.
-* You can turn on an optional biometric lock that gates the app on your device.
+## What is protected
 
-## What is not protected yet
+- Traffic between the app and the server uses HTTPS.
+- In the cloud, your notes sit in your own Google Drive, under your Google account's security.
+- **The vault (optional).** Turn it on and the app gives you a 6-word recovery phrase. Argon2id derives a key from it on your phone, and AES-256-GCM seals every note before it leaves the device. Your Drive and the server then hold only ciphertext. The phrase and the key never leave your phone.
+- On the device: an optional biometric lock, optional two-step verification with an authenticator app, blocked screenshots and screen recording, and Android secure storage for the session and the vault key.
 
-We would rather be exact than impressive. Today your note contents are stored as ordinary text in your own database rows. They are protected by the transport encryption and access control above, and by the hosting platform's at-rest disk encryption, but they are not yet end-to-end encrypted. In principle, the service operator could read note contents.
+## What isn't protected
 
-Closing that gap is the project's top priority. Client-side end-to-end encryption, where your notes are sealed on your device with a key derived from your credentials so the server only ever stores unreadable ciphertext, is in active development and is planned for the next release. Until it ships, please do not store passwords or other high-risk secrets in any notes app, including this one.
+We would rather be exact than impressive.
+
+- **With the vault off**, your notes are plain text in your Google Drive, and they pass through the Atomic Notes server as plain text on the way there. The server doesn't store them, but it handles them in transit. Turn the vault on if that matters to you.
+- The app doesn't add its own encryption to the notes stored on your phone. It relies on Android's device encryption.
+- If you lose your recovery phrase, no one can decrypt your vault notes on a new device. Not the developer, not Google. Write the phrase down.
 
 ## No AI, no ads, no data sale
 
-Atomic Notes has no AI features. Your notes are never sent to a model and never used as training data. There are no ads in the app today. The planned way to cover cloud costs is an optional, rewarded-ad system a user can choose to use for faster sync. It only ever buys speed, never access to your notes, and a free background sync will always stay free. The project will never sell your data. That is not a promise about intentions. It is a consequence of building the app so that there is nothing to sell.
+Atomic Notes has no AI features. Your notes are never sent to a model and never used as training data. There are no ads in the app.
+
+Cloud sync runs on Atomic Energy, which refills for free every day. Atomic Coins add more energy or more note capacity. Coins buy speed and room, never access to your notes. The project will never sell your data, and it's built so that there's nothing to sell.
 
 ## Open source
 
-The application source is private for now, held back until the security-sensitive parts are hardened, encryption first. The plan is to open it to public read access once that work is done, so anyone can verify these claims rather than take them on faith. This showcase repository, its README, and its website already describe the architecture and the exact security posture in the same honest terms as this page.
+The full app source is in this repository under the MIT License. Anyone can read what the app does instead of taking this page on faith.
 
 ## How to hold us to this
 
-Verify, do not trust. Once the source is public, you will be able to read exactly what the app does. In the meantime, the app makes no hidden network calls beyond its own backend, ships no third-party SDKs that phone home, and requests no permissions it does not use. If you find anything that contradicts this page, that is a defect we want to fix.
+Verify, don't trust:
 
-Questions or concerns: reach the developer through the links in the project [README](README.md).
+- [`pubspec.yaml`](pubspec.yaml) lists every library the app ships. There's no analytics, crash-reporting or ad SDK in it.
+- [`lib/security/vault.dart`](lib/security/vault.dart) and [`lib/security/vault_crypto.dart`](lib/security/vault_crypto.dart) hold the vault's key derivation and encryption.
+- Every release on [GitHub Releases](https://github.com/DevBehindYou/Atomic-Notes-App-V0.2/releases) lists the SHA-256 of each APK and the GitHub Actions run that built it.
+
+If you find anything that contradicts this page, that's a defect we want to fix. Reach the developer through the links in the [README](README.md).
 
 ---
 
-*Last reviewed: 2026-08-10. This page tracks the app's real behavior, not its aspirations. The one forward-looking item, end-to-end encryption, is labeled as in development on purpose.*
+*Last reviewed: 2026-09-28, for version 2.03.4.*
