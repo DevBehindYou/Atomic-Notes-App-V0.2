@@ -7,7 +7,7 @@ class WebLinks {
 
   static const String site = 'https://atomic-notes-community.vercel.app';
 
-  /// How to support the project on Patreon and get Atomic Coins early.
+  /// How to support the project and get Atomic Coins early.
   static const String support = '$site/support-atomic-notes';
 
   /// Whether [url] is a web page the App hands to the browser. Only https:

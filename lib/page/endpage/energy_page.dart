@@ -121,7 +121,8 @@ class _EnergyViewState extends State<_EnergyView> {
   }
 
   /// Coins aren't sold in the App yet. The sheet sends people to the website,
-  /// where supporting the project on Patreon earns Atomic Coins early.
+  /// where supporting the project earns Atomic Coins early. The sheet names no
+  /// payment platform: the website does.
   void _coinStore() {
     final email = ApiClient.instance.currentUserEmail;
     showModalBottomSheet<void>(
@@ -145,9 +146,9 @@ class _EnergyViewState extends State<_EnergyView> {
                   style: AppType.headlineLg),
               const SizedBox(height: AppSpace.sm),
               const Text(
-                "Coins aren't sold in the app yet. Support Atomic Notes on "
-                'Patreon at the amount you choose, and the developer sends '
-                'Atomic Coins to your account as an early-supporter reward.',
+                "Coins aren't sold in the app yet. Support Atomic Notes at "
+                'the amount you choose, and the developer sends Atomic Coins '
+                'to your account as an early-supporter reward.',
                 style: AppType.bodyMd,
               ),
               if (email != null && email.isNotEmpty) ...[
@@ -158,14 +159,14 @@ class _EnergyViewState extends State<_EnergyView> {
                     style: AppType.bodyMd.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: AppSpace.xs),
                 const Text(
-                  'Send this exact email to the developer in a Patreon '
-                  'message, so the coins reach the right account.',
+                  'Share this exact email with the developer when you '
+                  'support, so the coins reach the right account.',
                   style: AppType.bodySm,
                 ),
               ],
               const SizedBox(height: AppSpace.lg),
               InkActionButton(
-                label: 'Support on Patreon',
+                label: 'Support Atomic Notes',
                 signal: true,
                 icon: Icons.open_in_new,
                 onTap: () async {
