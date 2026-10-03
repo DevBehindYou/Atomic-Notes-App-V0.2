@@ -77,6 +77,7 @@ An optional end-to-end vault. No AI, no ads, no trackers.</p>
 - [FAQ](#faq)
 - [Project documents](#project-documents)
 - [Author and license](#author-and-license)
+- [Support Atomic Notes](#support-atomic-notes)
 
 ---
 
@@ -467,3 +468,19 @@ Atomic Notes is proprietary, **source-available** software. The code is public s
   <br />
   <sub><b>ATOMIC NOTES</b> · Your Notes, Your Drive, Local First.</sub>
 </div>
+
+---
+
+## Support Atomic Notes
+
+Atomic Notes is built and run by one developer. If the app is useful to you, you can support it on Patreon or Ko-fi at the amount you choose. Both reach the same developer.
+
+<p>
+  <a href="https://www.patreon.com/cw/DevBehindYou"><img alt="Support on Patreon" src="https://img.shields.io/badge/Support_on-Patreon-15171B?style=flat-square&logo=patreon&logoColor=white" /></a>
+  <a href="https://ko-fi.com/devbehindyou"><img alt="Buy me a coffee on Ko-fi" src="https://img.shields.io/badge/Buy_me_a_coffee-Ko--fi-3A2FF0?style=flat-square&logo=kofi&logoColor=white" /></a>
+</p>
+
+- Patreon: [patreon.com/cw/DevBehindYou](https://www.patreon.com/cw/DevBehindYou)
+- Ko-fi: [ko-fi.com/devbehindyou](https://ko-fi.com/devbehindyou)
+
+Early supporters get Atomic Coins as a thank-you. Send your Atomic Notes account email in a Patreon message, or write it in the Ko-fi message box and mark it private, and the developer adds the coins to your account by hand. Patreon or Ko-fi handles the payment, so Atomic Notes never sees your card or bank details. The full steps are on the [support page](https://atomic-notes-community.vercel.app/support-atomic-notes).
