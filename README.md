@@ -462,6 +462,13 @@ Built by **DevBehindYou** (Ashutosh Sharma), who also runs the sync server and t
 
 Atomic Notes is proprietary, **source-available** software. The code is public so you can check how the app treats your data, and you can install the official releases. You may not copy, modify, redistribute or reuse the code, or use it to train AI models. The full terms are in the [Atomic Notes Source-Available License](LICENSE). Versions published before 28 September 2026 were released under the MIT License.
 
+<div align="center">
+  <br />
+  <img src="assets/icon.png" width="56" alt="Atomic Notes app icon" />
+  <br />
+  <sub><b>ATOMIC NOTES</b> · Your Notes, Your Drive, Local First.</sub>
+</div>
+
 ---
 
 ## Support Atomic Notes
@@ -477,10 +484,3 @@ Atomic Notes is built and run by one developer. If the app is useful to you, you
 - Ko-fi: [ko-fi.com/devbehindyou](https://ko-fi.com/devbehindyou)
 
 Early supporters get Atomic Coins as a thank-you. Send your Atomic Notes account email in a Patreon message, or write it in the Ko-fi message box and mark it private, and the developer adds the coins to your account by hand. Patreon or Ko-fi handles the payment, so Atomic Notes never sees your card or bank details. The full steps are on the [support page](https://atomic-notes-community.vercel.app/support-atomic-notes).
-
-<div align="center">
-  <br />
-  <img src="assets/icon.png" width="56" alt="Atomic Notes app icon" />
-  <br />
-  <sub><b>ATOMIC NOTES</b> · Your Notes, Your Drive, Local First.</sub>
-</div>
