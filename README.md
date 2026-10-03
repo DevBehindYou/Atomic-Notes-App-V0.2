@@ -37,6 +37,8 @@ An optional end-to-end vault. No AI, no ads, no trackers.</p>
   <a href="#how-atomic-notes-works">How it works</a>
   &nbsp;·&nbsp;
   <a href="#faq">FAQ</a>
+  &nbsp;·&nbsp;
+  <a href="https://ko-fi.com/devbehindyou">Support</a>
 </p>
 
 </div>
