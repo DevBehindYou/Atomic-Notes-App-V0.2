@@ -457,7 +457,7 @@ Not yet. Atomic Notes for Android ships as signed APKs on GitHub Releases, and y
 
 Built by **DevBehindYou** (Ashutosh Sharma), who also runs the sync server and the community site.
 
-- Portfolio: [devbehindyou.vercel.app](https://devbehindyou.vercel.app)
+- Portfolio: [devbehindyou.com](https://devbehindyou.com)
 - GitHub: [@DevBehindYou](https://github.com/DevBehindYou)
 - Medium: [@devbehindyou](https://medium.com/@devbehindyou)
 - X: [@devbehindyou](https://x.com/devbehindyou)
