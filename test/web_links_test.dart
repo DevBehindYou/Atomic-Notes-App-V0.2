@@ -15,6 +15,6 @@ void main() {
 
   test('the support page lives on the Atomic Notes website', () {
     expect(WebLinks.support,
-        'https://atomic-notes.devbehindyou.com/support-atomic-notes');
+        'https://atomic-notes-community.vercel.app/support-atomic-notes');
   });
 }

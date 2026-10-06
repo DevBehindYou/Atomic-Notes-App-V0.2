@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 class WebLinks {
   WebLinks._();
 
-  static const String site = 'https://atomic-notes.devbehindyou.com';
+  static const String site = 'https://atomic-notes-community.vercel.app';
 
   /// How to support the project and get Atomic Coins early.
   static const String support = '$site/support-atomic-notes';
