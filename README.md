@@ -1,7 +1,7 @@
 <!--
   Repository settings (GitHub builds the search listing and link card from these, not from this file):
     About > Description: Local-first notes app for Android. Syncs to your own Google Drive, optional AES-256-GCM vault. No AI, no ads, no trackers.
-    About > Website:     https://atomic-notes-community.vercel.app
+    About > Website:     https://atomic-notes.devbehindyou.com
     About > Topics:      local-first, notes-app, android, flutter, dart, google-drive, end-to-end-encryption,
                          privacy, offline-first, no-tracking, aes-gcm, argon2, source-available
     Settings > Social preview: upload Project-Images/README/og-banner.png (1200x630)
@@ -32,7 +32,7 @@ An optional end-to-end vault. No AI, no ads, no trackers.</p>
 <p>
   <a href="https://github.com/DevBehindYou/Atomic-Notes-App-V0.2/releases/latest"><b>Download the APK</b></a>
   &nbsp;·&nbsp;
-  <a href="https://atomic-notes-community.vercel.app">Website</a>
+  <a href="https://atomic-notes.devbehindyou.com">Website</a>
   &nbsp;·&nbsp;
   <a href="#how-atomic-notes-works">How it works</a>
   &nbsp;·&nbsp;
@@ -383,7 +383,7 @@ A build you sign yourself can't sign in with Google, because the sign-in client 
 | Encryption | `cryptography` (Argon2id, AES-256-GCM), `flutter_secure_storage` |
 | Device security | `local_auth` (biometrics), TOTP two-step codes, `FLAG_SECURE` |
 | Server | Hono (TypeScript) on Vercel, MongoDB Atlas, Google Drive API |
-| Website | Next.js 15 ([Atomic Notes Community](https://atomic-notes-community.vercel.app)) |
+| Website | Next.js 15 ([Atomic Notes Community](https://atomic-notes.devbehindyou.com)) |
 | Releases | GitHub Actions, split-ABI APKs signed with the release key |
 
 ---
@@ -485,4 +485,4 @@ Atomic Notes is built and run by one developer. If the app is useful to you, you
 - Patreon: [patreon.com/cw/DevBehindYou](https://www.patreon.com/cw/DevBehindYou)
 - Ko-fi: [ko-fi.com/devbehindyou](https://ko-fi.com/devbehindyou)
 
-Early supporters get Atomic Coins as a thank-you. Send your Atomic Notes account email in a Patreon message, or write it in the Ko-fi message box and mark it private, and the developer adds the coins to your account by hand. Patreon or Ko-fi handles the payment, so Atomic Notes never sees your card or bank details. The full steps are on the [support page](https://atomic-notes-community.vercel.app/support-atomic-notes).
+Early supporters get Atomic Coins as a thank-you. Send your Atomic Notes account email in a Patreon message, or write it in the Ko-fi message box and mark it private, and the developer adds the coins to your account by hand. Patreon or Ko-fi handles the payment, so Atomic Notes never sees your card or bank details. The full steps are on the [support page](https://atomic-notes.devbehindyou.com/support-atomic-notes).
