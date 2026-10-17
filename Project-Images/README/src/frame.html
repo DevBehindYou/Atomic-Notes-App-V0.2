@@ -8,7 +8,9 @@
 <div class="phone"><div class="screen"><img id="s"></div></div>
 <script>
   const q = new URLSearchParams(location.search);
-  document.getElementById('s').src = "../../Mockups/atomic-notes-mockup-image-" + q.get('n') + ".png";
+  // Screens live in ../screens: release 2.03.5 cuts from the iPhone 18 Pro mockups (no device frame, because
+  // the app is Android-only) and a few August 2026 screens that have no newer mockup yet.
+  document.getElementById('s').src = "../screens/" + q.get('s') + ".png";
   if (q.get('ink')) document.querySelector('.phone').classList.add('inkshadow');
 </script>
 </body></html>
