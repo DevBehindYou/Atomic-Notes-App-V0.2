@@ -179,9 +179,9 @@ If a sync fails and no note gets through, its energy is refunded. Coins can't be
 <div align="center">
 <table>
   <tr>
-    <td align="center" width="33%"><img src="Project-Images/README/screen-energy.png" width="220" alt="Atomic Energy screen with a 110 of 120 energy bar, coin balance, and activity list" /><br /><sub><b>Atomic Energy</b></sub></td>
+    <td align="center" width="33%"><img src="Project-Images/README/screen-atomic-energy.png" width="220" alt="Atomic Energy screen with 105 of 120 energy, 170 Atomic Coins, the Strangelet note tier, and the activity list" /><br /><sub><b>Atomic Energy</b></sub></td>
     <td align="center" width="33%"><img src="Project-Images/README/screen-convert-coins.png" width="220" alt="Convert Atomic Coins to energy sheet" /><br /><sub><b>Convert coins</b></sub></td>
-    <td align="center" width="33%"><img src="Project-Images/README/screen-energy-popup.png" width="220" alt="Energy and coins popup opened from the home screen" /><br /><sub><b>Quick look from home</b></sub></td>
+    <td align="center" width="33%"><img src="Project-Images/README/screen-settings-energy-popup.png" width="220" alt="Energy and coins popup opened from the app header" /><br /><sub><b>Quick look from the header</b></sub></td>
   </tr>
 </table>
 </div>
@@ -218,7 +218,7 @@ Every account starts on **Tachyon** with room for 30 notes. Checklists count the
   <tr>
     <td align="center" width="33%"><img src="Project-Images/README/screen-notifications.png" width="220" alt="Atomic Notes notification center with two team messages" /><br /><sub><b>Notification center</b></sub></td>
     <td align="center" width="33%"><img src="assets/Atomic%20Icons/dotgrid-blink-transparent.gif" width="170" alt="Atomi, the blinking dot-grid mascot of Atomic Notes" /><br /><sub><b>Atomi</b></sub></td>
-    <td align="center" width="33%"><img src="Project-Images/README/screen-security.png" width="220" alt="Atomic Notes security screen with the biometric unlock switch" /><br /><sub><b>Biometric lock</b></sub></td>
+    <td align="center" width="33%"><img src="Project-Images/README/screen-security.png" width="220" alt="Atomic Notes security screen with biometric unlock and no-screenshots mode both on" /><br /><sub><b>Lock and no screenshots</b></sub></td>
   </tr>
 </table>
 </div>
@@ -234,18 +234,37 @@ Every account starts on **Tachyon** with room for 30 notes. Checklists count the
 
 ## Screens
 
+### A 30-second tour
+
+<div align="center">
+<a href="https://atomic-notes.devbehindyou.com/#interface">
+  <img src="Project-Images/README/demo-poster.jpg" width="720" alt="Play the 30-second Atomic Notes demo video. The first frame shows the encryption screen beside the words Nobody reads your notes." />
+</a>
+<br />
+<sub>Plays on the website. The MP4 files are in <a href="Project-Images/Mockups/Atomic-Notes-iPhone18-Mockups/Video-Demos">Project-Images/Mockups/Atomic-Notes-iPhone18-Mockups/Video-Demos</a>.<br />
+The demo uses a phone mockup. Its home and editor screens preview the redesign in progress, with search, tags, and text formatting that aren't in release 2.03.5 yet.</sub>
+</div>
+
+### Settings, vault, and sync
+
 <div align="center">
 <table>
   <tr>
     <td align="center" width="25%"><img src="Project-Images/README/screen-encryption.png" width="190" alt="Encryption screen showing the vault is on" /><br /><sub><b>Encryption vault</b></sub></td>
     <td align="center" width="25%"><img src="Project-Images/README/screen-cloud-sync.png" width="190" alt="Cloud sync switch" /><br /><sub><b>Cloud sync switch</b></sub></td>
-    <td align="center" width="25%"><img src="Project-Images/README/screen-database.png" width="190" alt="Storage report with notes on the device and in the cloud" /><br /><sub><b>Device and cloud counts</b></sub></td>
-    <td align="center" width="25%"><img src="Project-Images/README/screen-danger-zone.png" width="190" alt="Danger Zone with separate local and cloud wipe actions" /><br /><sub><b>Danger Zone</b></sub></td>
+    <td align="center" width="25%"><img src="Project-Images/README/screen-cloud-notes.png" width="190" alt="Cloud Notes screen showing 23 notes on the device and 23 in the cloud, in sync" /><br /><sub><b>Device and cloud counts</b></sub></td>
+    <td align="center" width="25%"><img src="Project-Images/README/screen-danger-zone.png" width="190" alt="Danger Zone with separate Wipe cloud notes and Wipe local notes actions" /><br /><sub><b>Danger Zone</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center" width="25%"><img src="Project-Images/README/screen-settings.png" width="190" alt="Settings with tiles for profile, cloud sync, recycle bin, security, encryption, and Atomic Energy" /><br /><sub><b>Settings</b></sub></td>
+    <td align="center" width="25%"><img src="Project-Images/README/screen-profile.png" width="190" alt="Profile screen with username, Google verification, public profile, and two-factor settings" /><br /><sub><b>Profile</b></sub></td>
+    <td align="center" width="25%"><img src="Project-Images/README/screen-avatar-picker.png" width="190" alt="Choose an avatar sheet with 14 pixel-art avatars" /><br /><sub><b>Pick an avatar</b></sub></td>
+    <td align="center" width="25%"><img src="Project-Images/README/screen-energy-activity.png" width="190" alt="Atomic Energy activity list with instant syncs, standard syncs, and daily energy grants" /><br /><sub><b>Energy activity</b></sub></td>
   </tr>
 </table>
 </div>
 
-The screens use the **Technical Editorial** design system: ink `#15171B` on paper `#F4F5F1`, with one accent, Signal `#3A2FF0`. Headings are Bebas Neue, body text is Hanken Grotesk, and data is JetBrains Mono. The fonts ship inside the app, so it looks right with no network. Some screenshots come from the August 2026 build, so small details (like the dates on note cards) differ from the current version.
+The screens use the **Technical Editorial** design system: ink `#15171B` on paper `#F4F5F1`, with one accent, Signal `#3A2FF0`. Headings are Bebas Neue, body text is Hanken Grotesk, and data is JetBrains Mono. The fonts ship inside the app, so it looks right with no network. The settings, vault, energy, sync, profile, and Danger Zone screens are from release 2.03.5. The notes grid, editors, convert coins, and notification screens come from the August 2026 build, so small details (like the dates on note cards and the bell on the home screen) differ from the current version.
 
 ---
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Rebuilds the README art in Project-Images/README from the HTML templates in this folder.
-# The templates use the App's bundled fonts (assets/fonts) and the screens in Project-Images/Mockups.
+# The templates use the App's bundled fonts (assets/fonts) and the screens in Project-Images/README/screens.
 #
 #   CHROME="/path/to/chrome" bash Project-Images/README/src/render.sh
 #
@@ -23,9 +23,13 @@ shot hero.html 1280 640 2 hero.png
 shot og.html 1200 630 1 og-banner.png F4F5F1FF
 shot tiers.html 1280 372 2 tiers.png
 
-for pair in 03:notes 04:checklist 05:editor 12:encryption 14:energy 15:convert-coins 18:notifications \
-            09:security 08:cloud-sync 10:danger-zone 07:database 13:energy-popup 16:coin-store; do
-  shot "frame.html?n=${pair%%:*}" 340 720 2 "screen-${pair#*:}.png"
+# Release 2.03.5 screens are 2199 px tall at 1080 wide, so their frame is shorter than the August 2026 ones.
+for name in notes checklist editor convert-coins notifications; do
+  shot "frame.html?s=$name" 340 720 2 "screen-$name.png"
+done
+for name in settings profile avatar-picker encryption security atomic-energy energy-activity settings-energy-popup \
+            cloud-sync cloud-notes danger-zone settings-about; do
+  shot "frame.html?s=$name" 340 652 2 "screen-$name.png"
 done
 
 rm -rf "$PROFILE"
